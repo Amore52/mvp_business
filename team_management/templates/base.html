@@ -22,7 +22,7 @@
 <body>
 <nav class="navbar navbar-expand-lg navbar-light bg-light mb-4">
     <div class="container-fluid">
-        <a class="navbar-brand" href="#">Менеджер команды</a>
+        <a class="navbar-brand" href="#">MVP Таск Менеджер</a>
         <div class="collapse navbar-collapse">
             <ul class="navbar-nav me-auto mb-2 mb-lg-0">
                 {% if user.is_authenticated %}
@@ -31,7 +31,7 @@
                 </li>
                 {% if user.is_authenticated and user.created_teams.exists %}
                 <li class="nav-item">
-                    <a class="nav-link" href="{% url 'teams:my_teams' %}">Мои команды</a>
+                    <a class="nav-link" href="{% url 'teams:my_teams' %}">Команды</a>
                 </li>
                 {% endif %}
                 <li class="nav-item nav-logout-form">

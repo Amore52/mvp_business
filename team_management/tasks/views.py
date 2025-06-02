@@ -1,18 +1,14 @@
 from calendar import monthrange
-from datetime import timedelta
-
-from django.shortcuts import render
+from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
 from .models import Task
 from datetime import datetime, timedelta
 from django.utils import timezone
-
+from django.contrib import messages
 
 @login_required
 def dashboard_view(request):
-    tasks = Task.objects.filter(team=request.user.team)
-
-    # Получаем параметры для календаря (если есть в GET-запросе)
+    tasks = Task.objects.all()
     try:
         year = int(request.GET.get('year', timezone.now().year))
         month = int(request.GET.get('month', timezone.now().month))
@@ -90,3 +86,40 @@ def my_tasks_view(request):
         'my_tasks': my_tasks.order_by('-created_at'),
     }
     return render(request, 'my_tasks.html', context)
+
+
+@login_required
+def task_detail_view(request, task_id):
+    task = get_object_or_404(Task, id=task_id)
+
+    # Проверяем, имеет ли пользователь доступ к задаче
+    if not (request.user.is_staff or request.user == task.assignee or request.user == task.created_by):
+        messages.error(request, "У вас нет доступа к этой задаче")
+        return redirect('dashboard')
+
+    if request.method == 'POST':
+        # Обновление статуса задачи
+        if 'status' in request.POST and (request.user.is_staff or request.user == task.assignee):
+            task.status = request.POST['status']
+            task.save()
+            messages.success(request, "Статус задачи обновлен")
+            return redirect('task_detail', task_id=task.id)
+
+        # Редактирование задачи (только для админа или создателя)
+        if request.user.is_staff or request.user == task.created_by:
+            task.title = request.POST.get('title', task.title)
+            task.description = request.POST.get('description', task.description)
+            task.deadline = request.POST.get('deadline', task.deadline)
+            assignee_id = request.POST.get('assignee')
+            if assignee_id:
+                task.assignee_id = assignee_id
+            task.save()
+            messages.success(request, "Задача обновлена")
+            return redirect('task_detail', task_id=task.id)
+
+    context = {
+        'task': task,
+        'status_choices': Task.STATUS_CHOICES,
+        'team_members': task.team.members.all() if task.team else [],
+    }
+    return render(request, 'task_detail.html', context)

@@ -12,7 +12,7 @@
     <!-- Команды, где пользователь создатель -->
     <div class="card mb-4">
         <div class="card-header">
-            <h5>Команды, которые я создал</h5>
+            <h5>Команды</h5>
         </div>
         <div class="card-body">
             {% if created_teams %}
@@ -30,31 +30,6 @@
             </div>
             {% else %}
             <p class="text-muted">Вы еще не создали ни одной команды</p>
-            {% endif %}
-        </div>
-    </div>
-
-    <!-- Команды, где пользователь участник -->
-    <div class="card">
-        <div class="card-header">
-            <h5>Команды, в которых я участвую</h5>
-        </div>
-        <div class="card-body">
-            {% if member_teams %}
-            <div class="list-group">
-                {% for team in member_teams %}
-                <a href="{% url 'teams:team_detail' team.id %}" 
-                   class="list-group-item list-group-item-action">
-                    <div class="d-flex justify-content-between">
-                        <span>{{ team.name }}</span>
-                        <span class="badge bg-secondary">Участник</span>
-                    </div>
-                    <small class="text-muted">{{ team.description|truncatechars:100 }}</small>
-                </a>
-                {% endfor %}
-            </div>
-            {% else %}
-            <p class="text-muted">Вы не состоите в других командах</p>
             {% endif %}
         </div>
     </div>

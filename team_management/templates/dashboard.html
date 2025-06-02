@@ -11,7 +11,6 @@
             <div class="mb-4">
                 <a href="{% url 'my_tasks' %}" class="btn btn-primary">Мои задачи</a>
             </div>
-
             <!-- Все задачи команды -->
             <h3>Все задачи</h3>
             <div class="row">
@@ -27,9 +26,9 @@
                                 <li class="list-group-item">
                                     <strong>Назначена:</strong>
                                     {% if task.assignee %}
-                                        {{ task.assignee.username }}
+                                    {{ task.assignee.username }}
                                     {% else %}
-                                        Не назначена
+                                    Не назначена
                                     {% endif %}
                                 </li>
                                 <li class="list-group-item">
@@ -44,7 +43,8 @@
                             </ul>
                         </div>
                         <div class="card-footer">
-                            <a href="#" class="btn btn-sm btn-outline-primary">Подробнее</a>
+                            <a href="{% url 'task_detail' task.id %}?next={{ request.get_full_path|urlencode }}"
+                               class="btn btn-sm btn-outline-primary">Подробнее</a>
                         </div>
                     </div>
                 </div>
@@ -70,41 +70,48 @@
                 <div class="card-body p-2">
                     <table class="table table-bordered table-sm mb-0">
                         <thead>
-                            <tr class="text-center">
-                                <th style="width: 14%;">Пн</th>
-                                <th style="width: 14%;">Вт</th>
-                                <th style="width: 14%;">Ср</th>
-                                <th style="width: 14%;">Чт</th>
-                                <th style="width: 14%;">Пт</th>
-                                <th style="width: 14%;">Сб</th>
-                                <th style="width: 14%;">Вс</th>
-                            </tr>
+                        <tr class="text-center">
+                            <th style="width: 14%;">Пн</th>
+                            <th style="width: 14%;">Вт</th>
+                            <th style="width: 14%;">Ср</th>
+                            <th style="width: 14%;">Чт</th>
+                            <th style="width: 14%;">Пт</th>
+                            <th style="width: 14%;">Сб</th>
+                            <th style="width: 14%;">Вс</th>
+                        </tr>
                         </thead>
                         <tbody>
-                            {% for week in calendar.weeks %}
-                            <tr class="text-center">
-                                {% for day in week %}
-                                <td
+                        {% for week in calendar.weeks %}
+                        <tr class="text-center">
+                            {% for day in week %}
+                            <td
                                     class="p-1 {% if day.is_today %}bg-info bg-opacity-25{% endif %} {% if day.is_selected %}bg-primary bg-opacity-25{% endif %}"
                                     style="height: 30px;"
-                                >
-                                    {% if day.in_month %}
-                                        <a href="?year={{ day.date.year }}&month={{ day.date.month }}&day={{ day.date.day }}"
-                                           class="text-decoration-none {% if day.is_today %}fw-bold{% endif %} {% if day.is_selected %}text-primary{% endif %}">
-                                            {{ day.date.day }}
-                                        </a>
-                                        {% if day.tasks_count %}
-                                        <div class="mt-0">
-                                            <span class="badge bg-info rounded-pill" style="font-size: 0.6rem; padding: 0.15rem 0.3rem;">
+                            >
+                                {% if day.in_month %}
+                                <a href="?year={{ day.date.year }}&month={{ day.date.month }}&day={{ day.date.day }}"
+                                   class="text-decoration-none {% if day.is_today %}fw-bold{% endif %} {% if day.is_selected %}text-primary{% endif %}">
+                                    {{ day.date.day }}
+                                </a>
+                                <div class="mt-0">
+                                    {% if day.tasks_count %}
+                                    <span class="badge bg-info rounded-pill"
+                                          style="font-size: 0.6rem; padding: 0.15rem 0.3rem;">
                                                 {{ day.tasks_count }}
                                             </span>
-                                        </div>
-                                        {% endif %}
                                     {% endif %}
-                                </td>
-                                {% endfor %}
-                            </tr>
+                                    {% if day.meetings_count %}
+                                    <span class="badge bg-warning rounded-pill"
+                                          style="font-size: 0.6rem; padding: 0.15rem 0.3rem;">
+                                                {{ day.meetings_count }}
+                                            </span>
+                                    {% endif %}
+                                </div>
+                                {% endif %}
+                            </td>
                             {% endfor %}
+                        </tr>
+                        {% endfor %}
                         </tbody>
                     </table>
                 </div>
@@ -124,8 +131,9 @@
                     </div>
                 </div>
                 <div class="card-body p-2">
+                    <h6>Задачи</h6>
                     {% if daily_tasks %}
-                    <ul class="list-group list-group-flush">
+                    <ul class="list-group list-group-flush mb-3">
                         {% for task in daily_tasks %}
                         <li class="list-group-item p-2">
                             <div class="d-flex justify-content-between">
@@ -142,7 +150,7 @@
                         {% endfor %}
                     </ul>
                     {% else %}
-                    <p class="text-muted mb-0">Нет задач на этот день</p>
+                    <p class="text-muted mb-3">Нет задач на этот день</p>
                     {% endif %}
                 </div>
             </div>

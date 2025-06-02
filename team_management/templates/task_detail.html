@@ -1,0 +1,133 @@
+{% extends "base.html" %}
+{% block title %}{{ task.title }}{% endblock %}
+{% block content %}
+<div class="container">
+    <div class="row">
+        <div class="col-md-8">
+            <h2>{{ task.title }}</h2>
+            
+            <div class="d-flex justify-content-between mb-3">
+                <a href="{% if request.GET.next %}{{ request.GET.next }}{% else %}{% url 'dashboard' %}{% endif %}" 
+                   class="btn btn-secondary">Назад</a>
+                
+                {% if request.user.is_staff or request.user == task.created_by %}
+                <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#editTaskModal">
+                    Редактировать
+                </button>
+                {% endif %}
+            </div>
+            
+            <div class="card mb-4">
+                <div class="card-header {% if task.status == 'done' %}bg-success{% elif task.status == 'in_progress' %}bg-warning{% else %}bg-info{% endif %}">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span>Статус: {{ task.get_status_display }}</span>
+                        <span>Срок: {{ task.deadline|date:"d.m.Y H:i" }}</span>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <h5 class="card-title">Описание</h5>
+                    <p class="card-text">{{ task.description|linebreaks }}</p>
+                    
+                    <div class="row mt-4">
+                        <div class="col-md-6">
+                            <h5>Информация</h5>
+                            <ul class="list-group">
+                                <li class="list-group-item">
+                                    <strong>Создана:</strong> {{ task.created_by.username }} ({{ task.created_at|date:"d.m.Y H:i" }})
+                                </li>
+                                <li class="list-group-item">
+                                    <strong>Назначена:</strong> 
+                                    {% if task.assignee %}
+                                        {{ task.assignee.username }}
+                                    {% else %}
+                                        Не назначена
+                                    {% endif %}
+                                </li>
+                                <li class="list-group-item">
+                                    <strong>Команда:</strong> {{ task.team|default:"Не указана" }}
+                                </li>
+                            </ul>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <h5>Действия</h5>
+                            {% if request.user == task.assignee or request.user.is_staff %}
+                            <form method="post" class="mb-3">
+                                {% csrf_token %}
+                                <div class="input-group">
+                                    <select name="status" class="form-select">
+                                        {% for value, label in status_choices %}
+                                        <option value="{{ value }}" {% if task.status == value %}selected{% endif %}>
+                                            {{ label }}
+                                        </option>
+                                        {% endfor %}
+                                    </select>
+                                    <button type="submit" class="btn btn-primary">Обновить статус</button>
+                                </div>
+                            </form>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Блок комментариев (будет реализован позже) -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Комментарии</h5>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted">Функционал комментариев будет добавлен в ближайшее время</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Модальное окно редактирования задачи -->
+{% if request.user.is_staff or request.user == task.created_by %}
+<div class="modal fade" id="editTaskModal" tabindex="-1" aria-labelledby="editTaskModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="post">
+                {% csrf_token %}
+                <div class="modal-header">
+                    <h5 class="modal-title" id="editTaskModalLabel">Редактирование задачи</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="title" class="form-label">Название</label>
+                        <input type="text" class="form-control" id="title" name="title" value="{{ task.title }}" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="description" class="form-label">Описание</label>
+                        <textarea class="form-control" id="description" name="description" rows="3">{{ task.description }}</textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label for="deadline" class="form-label">Срок выполнения</label>
+                        <input type="datetime-local" class="form-control" id="deadline" name="deadline" 
+                               value="{{ task.deadline|date:'Y-m-d\TH:i' }}" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="assignee" class="form-label">Исполнитель</label>
+                        <select class="form-select" id="assignee" name="assignee">
+                            <option value="">Не назначено</option>
+                            {% for member in team_members %}
+                            <option value="{{ member.id }}" {% if task.assignee == member %}selected{% endif %}>
+                                {{ member.username }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                    <button type="submit" class="btn btn-primary">Сохранить изменения</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}

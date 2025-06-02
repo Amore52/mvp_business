@@ -2,7 +2,7 @@ from django.contrib import admin
 from django.urls import path, include
 from django.views.generic import RedirectView
 
-from tasks.views import dashboard_view, my_tasks_view
+from tasks.views import dashboard_view, my_tasks_view, task_detail_view
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -10,5 +10,7 @@ urlpatterns = [
     path('', RedirectView.as_view(url='users/login/')),
     path('dashboard/', dashboard_view, name='dashboard'),
     path('my-tasks/', my_tasks_view, name='my_tasks'),
+    path('task/<int:task_id>/', task_detail_view, name='task_detail'),
     path('teams/', include('teams.urls', namespace='teams')),
+
 ]

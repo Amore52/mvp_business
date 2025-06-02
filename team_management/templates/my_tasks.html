@@ -3,7 +3,7 @@
 {% block content %}
 <div class="container">
     <h2>Мои задачи</h2>
-    
+
     <div class="mb-4">
         <a href="{% url 'dashboard' %}" class="btn btn-secondary">Все задачи</a>
         <a href="#" class="btn btn-secondary">Мои встречи</a>
@@ -21,7 +21,8 @@
                     <p class="card-text">{{ task.description|truncatechars:100 }}</p>
                     <ul class="list-group list-group-flush">
                         <li class="list-group-item">
-                            <strong>Создана:</strong> {{ task.created_by.username }} ({{ task.created_at|date:"d.m.Y H:i" }})
+                            <strong>Создана:</strong> {{ task.created_by.username }} ({{ task.created_at|date:"d.m.Y
+                            H:i" }})
                         </li>
                         <li class="list-group-item">
                             <strong>Срок:</strong> {{ task.deadline|date:"d.m.Y H:i" }}
@@ -31,7 +32,8 @@
                         </li>
                 </div>
                 <div class="card-footer">
-                    <a href="#" class="btn btn-sm btn-outline-primary">Подробнее</a>
+                    <a href="{% url 'task_detail' task.id %}?next={{ request.get_full_path|urlencode }}"
+                       class="btn btn-sm btn-outline-primary">Подробнее</a>
                     {% if task.status != 'done' %}
                     <a href="#" class="btn btn-sm btn-outline-success">Отметить выполненной</a>
                     {% endif %}
