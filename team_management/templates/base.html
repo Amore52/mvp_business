@@ -29,6 +29,11 @@
                 <li class="nav-item">
                     <a class="nav-link" href="{% url 'dashboard' %}">Главная</a>
                 </li>
+                {% if user.is_authenticated and user.created_teams.exists %}
+                <li class="nav-item">
+                    <a class="nav-link" href="{% url 'teams:my_teams' %}">Мои команды</a>
+                </li>
+                {% endif %}
                 <li class="nav-item nav-logout-form">
                     <form method="post" action="{% url 'logout' %}">
                         {% csrf_token %}

@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container">
+    <h2>{{ team.name }}</h2>
+    <p>{{ team.description }}</p>
+    {% if is_admin %}
+    <div class="mb-3">
+        <a href="{% url 'teams:team_edit' pk=team.id %}" class="btn btn-primary me-2">Редактировать команду</a>
+        <a href="{% url 'teams:team_delete' pk=team.id %}" class="btn btn-danger">Удалить команду</a>
+    </div>
+    {% endif %}
+    {% if is_admin %}
+    <div class="card mb-4">
+        <div class="card-header">Добавить участника</div>
+        <div class="card-body">
+            <form method="post">
+                {% csrf_token %}
+                {{ member_form.as_p }}
+                <button type="submit" class="btn btn-sm btn-primary">Добавить</button>
+            </form>
+        </div>
+    </div>
+    {% endif %}
+    <h3>Участники команды</h3>
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Пользователь</th>
+                <th>Роль</th>
+                <th>Дата вступления</th>
+                {% if is_admin %}
+                <th>Действия</th>
+                {% endif %}
+            </tr>
+        </thead>
+        <tbody>
+            {% for member in members %}
+            <tr>
+                <td>{{ member.user.username }}</td>
+                <td>{{ member.get_role_display }}</td>
+                <td>{{ member.joined_at|date:"d.m.Y" }}</td>
+                {% if is_admin %}
+                <td>
+                    <form method="post" action="{% url 'teams:update_member_role' team.id member.user.id %}" class="d-inline-flex align-items-center">
+                        {% csrf_token %}
+                        <select name="role" class="form-select form-select-sm me-2">
+                            {% for value, label in member.ROLE_CHOICES %}
+                            <option value="{{ value }}" {% if member.role == value %}selected{% endif %}>{{ label }}</option>
+                            {% endfor %}
+                        </select>
+                        <button type="submit" class="btn btn-sm btn-outline-secondary me-2">Изменить</button>
+                        <a href="{% url 'teams:remove_member' team.id member.user.id %}" class="btn btn-sm btn-outline-danger">Удалить</a>
+                    </form>
+                </td>
+                {% endif %}
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

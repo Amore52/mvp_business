@@ -5,9 +5,7 @@ from .models import Task
 
 @login_required
 def dashboard_view(request):
-    # Все задачи
     tasks = Task.objects.all()
-
     context = {
         'tasks': tasks.order_by('-created_at'),
     }
