@@ -2,136 +2,151 @@
 {% block title %}Главная{% endblock %}
 {% block content %}
 <div class="container">
-    <h2>Добро пожаловать, {{ user.username }}</h2>
-    <p>Это ваш личный кабинет.</p>
-
-    <div class="mb-4">
-        <a href="{% url 'my_tasks' %}" class="btn btn-primary">Мои задачи</a>
-        <a href="#" class="btn btn-secondary">Календарь</a>
-    </div>
-
-    <!-- Календарь -->
-    <div class="card mb-4">
-        <div class="card-header">
-            <div class="d-flex justify-content-between align-items-center">
-                <h5>Календарь задач - {{ calendar.selected_date|date:"F Y" }}</h5>
-                <div>
-                    <a href="?year={{ calendar.prev_year }}&month={{ calendar.prev_month }}&day=1"
-                       class="btn btn-sm btn-outline-secondary">Предыдущий месяц</a>
-                    <a href="?year={{ calendar.next_year }}&month={{ calendar.next_month }}&day=1"
-                       class="btn btn-sm btn-outline-secondary">Следующий месяц</a>
-                </div>
-            </div>
-        </div>
-        <div class="card-body">
-            <table class="table table-bordered">
-                <thead>
-                    <tr>
-                        <th>Пн</th>
-                        <th>Вт</th>
-                        <th>Ср</th>
-                        <th>Чт</th>
-                        <th>Пт</th>
-                        <th>Сб</th>
-                        <th>Вс</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for week in calendar.weeks %}
-                    <tr>
-                        {% for day in week %}
-                        <td
-                            {% if day.is_today %}class="table-info"{% endif %}
-                            {% if day.is_selected %}class="table-primary"{% endif %}
-                        >
-                            {% if day.in_month %}
-                                <a href="?year={{ day.date.year }}&month={{ day.date.month }}&day={{ day.date.day }}">
-                                    {{ day.date.day }}
-                                </a>
-                                {% if day.tasks_count %}
-                                <div class="mt-1">
-                                    <span class="badge bg-info">Задач: {{ day.tasks_count }}</span>
-                                </div>
-                                {% endif %}
-                            {% endif %}
-                        </td>
-                        {% endfor %}
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
-    </div>
-
-    <!-- Задачи на выбранный день -->
-    <div class="card mb-4">
-        <div class="card-header">
-            <div class="d-flex justify-content-between align-items-center">
-                <h5>Задачи на {{ calendar.selected_date|date:"d.m.Y" }}</h5>
-                <div>
-                    <a href="?year={{ calendar.prev_date.year }}&month={{ calendar.prev_date.month }}&day={{ calendar.prev_date.day }}"
-                       class="btn btn-sm btn-outline-secondary">Предыдущий день</a>
-                    <a href="?year={{ calendar.next_date.year }}&month={{ calendar.next_date.month }}&day={{ calendar.next_date.day }}"
-                       class="btn btn-sm btn-outline-secondary">Следующий день</a>
-                </div>
-            </div>
-        </div>
-        <div class="card-body">
-            {% if daily_tasks %}
-            <ul class="list-group">
-                {% for task in daily_tasks %}
-                <li class="list-group-item d-flex justify-content-between align-items-center">
-                    <div>
-                        <strong>{{ task.title }}</strong> ({{ task.get_status_display }})
-                        <div class="small">Срок: {{ task.deadline|time }}</div>
-                    </div>
-                    <span class="badge bg-primary rounded-pill">{{ task.assignee.username|default:"Не назначена" }}</span>
-                </li>
-                {% endfor %}
-            </ul>
-            {% else %}
-            <p>Нет задач на этот день</p>
-            {% endif %}
-        </div>
-    </div>
-
-    <!-- Все задачи команды -->
-    <h3>Все задачи команды {{ user.team.name }}</h3>
     <div class="row">
-        {% for task in tasks %}
-        <div class="col-md-4 mb-4">
+        <!-- Основной контент слева -->
+        <div class="col-md-8">
+            <h2>Добро пожаловать, {{ user.username }}</h2>
+            <p>Это ваш личный кабинет.</p>
+
+            <div class="mb-4">
+                <a href="{% url 'my_tasks' %}" class="btn btn-primary">Мои задачи</a>
+            </div>
+
+            <!-- Все задачи команды -->
+            <h3>Все задачи</h3>
+            <div class="row">
+                {% for task in tasks %}
+                <div class="col-md-6 mb-4">
+                    <div class="card h-100">
+                        <div class="card-header {% if task.status == 'done' %}bg-success{% elif task.status == 'in_progress' %}bg-warning{% else %}bg-info{% endif %}">
+                            <h5 class="card-title">{{ task.title }}</h5>
+                        </div>
+                        <div class="card-body">
+                            <p class="card-text">{{ task.description|truncatechars:100 }}</p>
+                            <ul class="list-group list-group-flush">
+                                <li class="list-group-item">
+                                    <strong>Назначена:</strong>
+                                    {% if task.assignee %}
+                                        {{ task.assignee.username }}
+                                    {% else %}
+                                        Не назначена
+                                    {% endif %}
+                                </li>
+                                <li class="list-group-item">
+                                    <strong>Срок:</strong> {{ task.deadline|date:"d.m.Y H:i" }}
+                                </li>
+                                <li class="list-group-item">
+                                    <strong>Статус:</strong> {{ task.get_status_display }}
+                                </li>
+                                <li class="list-group-item">
+                                    <strong>Команда:</strong> {{ task.team }}
+                                </li>
+                            </ul>
+                        </div>
+                        <div class="card-footer">
+                            <a href="#" class="btn btn-sm btn-outline-primary">Подробнее</a>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Боковая панель справа -->
+        <div class="col-md-4">
+            <!-- Компактный календарь -->
+            <div class="card mb-3">
+                <div class="card-header">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">{{ calendar.selected_date|date:"F Y" }}</h5>
+                        <div>
+                            <a href="?year={{ calendar.prev_year }}&month={{ calendar.prev_month }}&day=1"
+                               class="btn btn-sm btn-outline-secondary py-0">‹</a>
+                            <a href="?year={{ calendar.next_year }}&month={{ calendar.next_month }}&day=1"
+                               class="btn btn-sm btn-outline-secondary py-0">›</a>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body p-2">
+                    <table class="table table-bordered table-sm mb-0">
+                        <thead>
+                            <tr class="text-center">
+                                <th style="width: 14%;">Пн</th>
+                                <th style="width: 14%;">Вт</th>
+                                <th style="width: 14%;">Ср</th>
+                                <th style="width: 14%;">Чт</th>
+                                <th style="width: 14%;">Пт</th>
+                                <th style="width: 14%;">Сб</th>
+                                <th style="width: 14%;">Вс</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for week in calendar.weeks %}
+                            <tr class="text-center">
+                                {% for day in week %}
+                                <td
+                                    class="p-1 {% if day.is_today %}bg-info bg-opacity-25{% endif %} {% if day.is_selected %}bg-primary bg-opacity-25{% endif %}"
+                                    style="height: 30px;"
+                                >
+                                    {% if day.in_month %}
+                                        <a href="?year={{ day.date.year }}&month={{ day.date.month }}&day={{ day.date.day }}"
+                                           class="text-decoration-none {% if day.is_today %}fw-bold{% endif %} {% if day.is_selected %}text-primary{% endif %}">
+                                            {{ day.date.day }}
+                                        </a>
+                                        {% if day.tasks_count %}
+                                        <div class="mt-0">
+                                            <span class="badge bg-info rounded-pill" style="font-size: 0.6rem; padding: 0.15rem 0.3rem;">
+                                                {{ day.tasks_count }}
+                                            </span>
+                                        </div>
+                                        {% endif %}
+                                    {% endif %}
+                                </td>
+                                {% endfor %}
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Дневной просмотр -->
             <div class="card">
-                <div class="card-header {% if task.status == 'done' %}bg-success{% elif task.status == 'in_progress' %}bg-warning{% else %}bg-info{% endif %}">
-                    <h5 class="card-title">{{ task.title }}</h5>
+                <div class="card-header">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">{{ calendar.selected_date|date:"d.m.Y" }}</h5>
+                        <div>
+                            <a href="?year={{ calendar.prev_date.year }}&month={{ calendar.prev_date.month }}&day={{ calendar.prev_date.day }}"
+                               class="btn btn-sm btn-outline-secondary py-0">‹</a>
+                            <a href="?year={{ calendar.next_date.year }}&month={{ calendar.next_date.month }}&day={{ calendar.next_date.day }}"
+                               class="btn btn-sm btn-outline-secondary py-0">›</a>
+                        </div>
+                    </div>
                 </div>
-                <div class="card-body">
-                    <p class="card-text">{{ task.description|truncatechars:100 }}</p>
+                <div class="card-body p-2">
+                    {% if daily_tasks %}
                     <ul class="list-group list-group-flush">
-                        <li class="list-group-item">
-                            <strong>Назначена:</strong>
-                            {% if task.assignee %}
-                                {{ task.assignee.username }}
-                            {% else %}
-                                Не назначена
-                            {% endif %}
+                        {% for task in daily_tasks %}
+                        <li class="list-group-item p-2">
+                            <div class="d-flex justify-content-between">
+                                <strong class="text-truncate" style="max-width: 70%;">{{ task.title }}</strong>
+                                <span class="badge {% if task.status == 'done' %}bg-success{% elif task.status == 'in_progress' %}bg-warning{% else %}bg-info{% endif %}"
+                                      style="font-size: 0.7rem;">
+                                    {{ task.get_status_display|slice:":1" }}
+                                </span>
+                            </div>
+                            <div class="small text-muted">
+                                {{ task.deadline|time }} • {{ task.assignee.username|default:"Не назначена" }}
+                            </div>
                         </li>
-                        <li class="list-group-item">
-                            <strong>Создана:</strong> {{ task.created_by.username }} ({{ task.created_at|date:"d.m.Y H:i" }})
-                        </li>
-                        <li class="list-group-item">
-                            <strong>Срок:</strong> {{ task.deadline|date:"d.m.Y H:i" }}
-                        </li>
-                        <li class="list-group-item">
-                            <strong>Статус:</strong> {{ task.get_status_display }}
-                        </li>
+                        {% endfor %}
                     </ul>
-                </div>
-                <div class="card-footer">
-                    <a href="#" class="btn btn-sm btn-outline-primary">Подробнее</a>
+                    {% else %}
+                    <p class="text-muted mb-0">Нет задач на этот день</p>
+                    {% endif %}
                 </div>
             </div>
         </div>
-        {% endfor %}
     </div>
 </div>
 {% endblock %}
