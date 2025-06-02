@@ -7,12 +7,96 @@
 
     <div class="mb-4">
         <a href="{% url 'my_tasks' %}" class="btn btn-primary">Мои задачи</a>
-        <a href="#" class="btn btn-secondary">Мои встречи</a>
-        <a href="#" class="btn btn-secondary">Оценки</a>
+        <a href="#" class="btn btn-secondary">Календарь</a>
     </div>
 
-    <h3>Задачи {{ user.team.name }}</h3>
+    <!-- Календарь -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <div class="d-flex justify-content-between align-items-center">
+                <h5>Календарь задач - {{ calendar.selected_date|date:"F Y" }}</h5>
+                <div>
+                    <a href="?year={{ calendar.prev_year }}&month={{ calendar.prev_month }}&day=1"
+                       class="btn btn-sm btn-outline-secondary">Предыдущий месяц</a>
+                    <a href="?year={{ calendar.next_year }}&month={{ calendar.next_month }}&day=1"
+                       class="btn btn-sm btn-outline-secondary">Следующий месяц</a>
+                </div>
+            </div>
+        </div>
+        <div class="card-body">
+            <table class="table table-bordered">
+                <thead>
+                    <tr>
+                        <th>Пн</th>
+                        <th>Вт</th>
+                        <th>Ср</th>
+                        <th>Чт</th>
+                        <th>Пт</th>
+                        <th>Сб</th>
+                        <th>Вс</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for week in calendar.weeks %}
+                    <tr>
+                        {% for day in week %}
+                        <td
+                            {% if day.is_today %}class="table-info"{% endif %}
+                            {% if day.is_selected %}class="table-primary"{% endif %}
+                        >
+                            {% if day.in_month %}
+                                <a href="?year={{ day.date.year }}&month={{ day.date.month }}&day={{ day.date.day }}">
+                                    {{ day.date.day }}
+                                </a>
+                                {% if day.tasks_count %}
+                                <div class="mt-1">
+                                    <span class="badge bg-info">Задач: {{ day.tasks_count }}</span>
+                                </div>
+                                {% endif %}
+                            {% endif %}
+                        </td>
+                        {% endfor %}
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
 
+    <!-- Задачи на выбранный день -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <div class="d-flex justify-content-between align-items-center">
+                <h5>Задачи на {{ calendar.selected_date|date:"d.m.Y" }}</h5>
+                <div>
+                    <a href="?year={{ calendar.prev_date.year }}&month={{ calendar.prev_date.month }}&day={{ calendar.prev_date.day }}"
+                       class="btn btn-sm btn-outline-secondary">Предыдущий день</a>
+                    <a href="?year={{ calendar.next_date.year }}&month={{ calendar.next_date.month }}&day={{ calendar.next_date.day }}"
+                       class="btn btn-sm btn-outline-secondary">Следующий день</a>
+                </div>
+            </div>
+        </div>
+        <div class="card-body">
+            {% if daily_tasks %}
+            <ul class="list-group">
+                {% for task in daily_tasks %}
+                <li class="list-group-item d-flex justify-content-between align-items-center">
+                    <div>
+                        <strong>{{ task.title }}</strong> ({{ task.get_status_display }})
+                        <div class="small">Срок: {{ task.deadline|time }}</div>
+                    </div>
+                    <span class="badge bg-primary rounded-pill">{{ task.assignee.username|default:"Не назначена" }}</span>
+                </li>
+                {% endfor %}
+            </ul>
+            {% else %}
+            <p>Нет задач на этот день</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Все задачи команды -->
+    <h3>Все задачи команды {{ user.team.name }}</h3>
     <div class="row">
         {% for task in tasks %}
         <div class="col-md-4 mb-4">
@@ -40,10 +124,6 @@
                         <li class="list-group-item">
                             <strong>Статус:</strong> {{ task.get_status_display }}
                         </li>
-                        <li class="list-group-item">
-                            <strong>Команда:</strong> {{ task.team }}
-                        </li>
-                    </ul>
                     </ul>
                 </div>
                 <div class="card-footer">
