@@ -1,20 +1,17 @@
 {% extends "base.html" %}
-{% block title %}Главная{% endblock %}
+{% block title %}Мои задачи{% endblock %}
 {% block content %}
 <div class="container">
-    <h2>Добро пожаловать, {{ user.username }}</h2>
-    <p>Это ваш личный кабинет.</p>
-
+    <h2>Мои задачи</h2>
+    
     <div class="mb-4">
-        <a href="{% url 'my_tasks' %}" class="btn btn-primary">Мои задачи</a>
+        <a href="{% url 'dashboard' %}" class="btn btn-secondary">Все задачи</a>
         <a href="#" class="btn btn-secondary">Мои встречи</a>
         <a href="#" class="btn btn-secondary">Оценки</a>
     </div>
 
-    <h3>Задачи {{ user.team.name }}</h3>
-
     <div class="row">
-        {% for task in tasks %}
+        {% for task in my_tasks %}
         <div class="col-md-4 mb-4">
             <div class="card">
                 <div class="card-header {% if task.status == 'done' %}bg-success{% elif task.status == 'in_progress' %}bg-warning{% else %}bg-info{% endif %}">
@@ -24,14 +21,6 @@
                     <p class="card-text">{{ task.description|truncatechars:100 }}</p>
                     <ul class="list-group list-group-flush">
                         <li class="list-group-item">
-                            <strong>Назначена:</strong>
-                            {% if task.assignee %}
-                                {{ task.assignee.username }}
-                            {% else %}
-                                Не назначена
-                            {% endif %}
-                        </li>
-                        <li class="list-group-item">
                             <strong>Создана:</strong> {{ task.created_by.username }} ({{ task.created_at|date:"d.m.Y H:i" }})
                         </li>
                         <li class="list-group-item">
@@ -40,16 +29,18 @@
                         <li class="list-group-item">
                             <strong>Статус:</strong> {{ task.get_status_display }}
                         </li>
-                        <li class="list-group-item">
-                            <strong>Команда:</strong> {{ task.team }}
-                        </li>
-                    </ul>
-                    </ul>
                 </div>
                 <div class="card-footer">
                     <a href="#" class="btn btn-sm btn-outline-primary">Подробнее</a>
+                    {% if task.status != 'done' %}
+                    <a href="#" class="btn btn-sm btn-outline-success">Отметить выполненной</a>
+                    {% endif %}
                 </div>
             </div>
+        </div>
+        {% empty %}
+        <div class="col-12">
+            <div class="alert alert-info">У вас нет назначенных задач</div>
         </div>
         {% endfor %}
     </div>
