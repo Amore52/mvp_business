@@ -1,0 +1,13 @@
+<!-- templates/dashboard.html -->
+{% extends "base.html" %}
+{% block title %}Главная{% endblock %}
+{% block content %}
+<h2>Добро пожаловать, {{ user.username }}</h2>
+<p>Это ваш личный кабинет.</p>
+<ul>
+  <li><a href="#">Мои задачи</a></li>
+  <li><a href="#">Мои встречи</a></li>
+  <li><a href="#">Оценки</a></li>
+</ul>
+
+{% endblock %}
