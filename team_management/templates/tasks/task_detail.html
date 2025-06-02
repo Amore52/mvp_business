@@ -5,18 +5,18 @@
     <div class="row">
         <div class="col-md-8">
             <h2>{{ task.title }}</h2>
-            
+
             <div class="d-flex justify-content-between mb-3">
-                <a href="{% if request.GET.next %}{{ request.GET.next }}{% else %}{% url 'dashboard' %}{% endif %}" 
+                <a href="{% if request.GET.next %}{{ request.GET.next }}{% else %}{% url 'dashboard' %}{% endif %}"
                    class="btn btn-secondary">Назад</a>
-                
+
                 {% if request.user.is_staff or request.user == task.created_by %}
                 <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#editTaskModal">
                     Редактировать
                 </button>
                 {% endif %}
             </div>
-            
+
             <div class="card mb-4">
                 <div class="card-header {% if task.status == 'done' %}bg-success{% elif task.status == 'in_progress' %}bg-warning{% else %}bg-info{% endif %}">
                     <div class="d-flex justify-content-between align-items-center">
@@ -27,20 +27,20 @@
                 <div class="card-body">
                     <h5 class="card-title">Описание</h5>
                     <p class="card-text">{{ task.description|linebreaks }}</p>
-                    
+
                     <div class="row mt-4">
                         <div class="col-md-6">
                             <h5>Информация</h5>
                             <ul class="list-group">
                                 <li class="list-group-item">
-                                    <strong>Создана:</strong> {{ task.created_by.username }} ({{ task.created_at|date:"d.m.Y H:i" }})
+                                    <strong>Создана:</strong> {{ task.created_at|date:"d.m.Y H:i" }}
                                 </li>
                                 <li class="list-group-item">
-                                    <strong>Назначена:</strong> 
+                                    <strong>Назначена:</strong>
                                     {% if task.assignee %}
-                                        {{ task.assignee.username }}
+                                    {{ task.assignee.username }}
                                     {% else %}
-                                        Не назначена
+                                    Не назначена
                                     {% endif %}
                                 </li>
                                 <li class="list-group-item">
@@ -48,7 +48,7 @@
                                 </li>
                             </ul>
                         </div>
-                        
+
                         <div class="col-md-6">
                             <h5>Действия</h5>
                             {% if request.user == task.assignee or request.user.is_staff %}
@@ -70,7 +70,7 @@
                     </div>
                 </div>
             </div>
-            
+
             <!-- Блок комментариев (будет реализован позже) -->
             <div class="card">
                 <div class="card-header">
@@ -98,7 +98,8 @@
                 <div class="modal-body">
                     <div class="mb-3">
                         <label for="title" class="form-label">Название</label>
-                        <input type="text" class="form-control" id="title" name="title" value="{{ task.title }}" required>
+                        <input type="text" class="form-control" id="title" name="title" value="{{ task.title }}"
+                               required>
                     </div>
                     <div class="mb-3">
                         <label for="description" class="form-label">Описание</label>
@@ -106,12 +107,12 @@
                     </div>
                     <div class="mb-3">
                         <label for="deadline" class="form-label">Срок выполнения</label>
-                        <input type="datetime-local" class="form-control" id="deadline" name="deadline" 
+                        <input type="datetime-local" class="form-control" id="deadline" name="deadline"
                                value="{{ task.deadline|date:'Y-m-d\TH:i' }}" required>
                     </div>
                     <div class="mb-3">
                         <label for="assignee" class="form-label">Исполнитель</label>
-                        <select class="form-select" id="assignee" name="assignee">
+                        <select name="assignee" class="form-select">
                             <option value="">Не назначено</option>
                             {% for member in team_members %}
                             <option value="{{ member.id }}" {% if task.assignee == member %}selected{% endif %}>

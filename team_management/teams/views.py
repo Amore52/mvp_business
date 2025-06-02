@@ -11,7 +11,11 @@ from .forms import TeamCreateForm, TeamMemberForm
 @login_required
 def my_teams(request):
     created_teams = Team.objects.filter(created_by=request.user)
-    member_teams = Team.objects.filter(members__user=request.user).exclude(created_by=request.user)
+    member_teams = Team.objects.filter(
+        members__user=request.user
+    ).exclude(
+        created_by=request.user
+    ).distinct()
 
     return render(request, 'teams/my_teams.html', {
         'created_teams': created_teams,
@@ -39,7 +43,8 @@ def team_create(request):
 def team_detail(request, team_id):
     team = get_object_or_404(Team, id=team_id)
     members = team.members.select_related('user')
-    is_admin = TeamMember.objects.filter(team=team, user=request.user, role='admin').exists()
+
+    is_admin = team.members.filter(user=request.user, role='admin').exists()
 
     if request.method == 'POST' and is_admin:
         member_form = TeamMemberForm(request.POST, team=team)
@@ -60,11 +65,10 @@ def team_detail(request, team_id):
     }
     return render(request, 'teams/team_detail.html', context)
 
-
 @login_required
 def remove_member(request, team_id, user_id):
     team = get_object_or_404(Team, id=team_id)
-    if TeamMember.objects.filter(team=team, user=request.user, role='admin').exists():
+    if team.members.filter(user=request.user, role='admin').exists():
         member = get_object_or_404(TeamMember, team=team, user_id=user_id)
         member.delete()
         messages.success(request, 'Пользователь удалён из команды')
@@ -76,8 +80,9 @@ def remove_member(request, team_id, user_id):
 @login_required
 def update_member_role(request, team_id, user_id):
     team = get_object_or_404(Team, id=team_id)
-    if TeamMember.objects.filter(team=team, user=request.user, role='admin').exists():
-        member = get_object_or_404(TeamMember, team=team, user_id=user_id)
+    # Проверяем права через user, а не user_id
+    if team.team_members.filter(user=request.user, role='admin').exists():
+        member = get_object_or_404(TeamMember, team=team, user__id=user_id)
         if request.method == 'POST':
             new_role = request.POST.get('role')
             if new_role in dict(TeamMember.ROLE_CHOICES).keys():
@@ -93,14 +98,20 @@ def update_member_role(request, team_id, user_id):
 
 class TeamUpdateView(UpdateView):
     model = Team
-    form_class = TeamCreateForm  # Используем ту же форму, что и для создания
+    form_class = TeamCreateForm
     template_name = 'teams/team_edit.html'
+    pk_url_kwarg = 'pk'  # Добавляем явное указание параметра
 
     def get_success_url(self):
+        # Используем pk вместо team_id для согласованности
         return reverse_lazy('teams:team_detail', kwargs={'team_id': self.object.id})
 
 
 class TeamDeleteView(DeleteView):
     model = Team
     template_name = 'teams/team_confirm_delete.html'
-    success_url = reverse_lazy('dashboard')  # Или другой URL после удаления
+    success_url = reverse_lazy('dashboard')
+    pk_url_kwarg = 'pk'  # Явно указываем имя параметра URL
+
+    def get_queryset(self):
+        return super().get_queryset().filter(created_by=self.request.user)

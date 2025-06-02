@@ -1,36 +1,45 @@
 {% extends "base.html" %}
-
 {% block content %}
 <div class="container">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2>Мои команды</h2>
-        <a href="{% url 'teams:team_create' %}" class="btn btn-primary">
-            Создать новую команду
-        </a>
-    </div>
+    <h2>Мои команды</h2>
 
-    <!-- Команды, где пользователь создатель -->
-    <div class="card mb-4">
-        <div class="card-header">
-            <h5>Команды</h5>
-        </div>
-        <div class="card-body">
-            {% if created_teams %}
+    <div class="row">
+        <div class="col-md-8">
+            <h3>Команды</h3>
             <div class="list-group">
                 {% for team in created_teams %}
-                <a href="{% url 'teams:team_detail' team.id %}" 
-                   class="list-group-item list-group-item-action">
-                    <div class="d-flex justify-content-between">
-                        <span>{{ team.name }}</span>
-                        <span class="badge bg-primary">Создатель</span>
+                <div class="list-group-item d-flex justify-content-between align-items-center">
+                    <div>
+                        <h5>{{ team.name }}</h5>
+                        <p class="mb-1">{{ team.description|default:"Описание отсутствует" }}</p>
                     </div>
-                    <small class="text-muted">{{ team.description|truncatechars:100 }}</small>
-                </a>
+                    <div>
+                        <a href="{% url 'teams:team_detail' team_id=team.id %}" class="btn btn-sm btn-outline-primary me-2">
+                            Открыть
+                        </a>
+                        <a href="{% url 'teams:team_delete' pk=team.id %}" class="btn btn-sm btn-outline-danger"
+                           onclick="return confirm('Вы уверены, что хотите удалить команду {{ team.name }}?')">
+                            Удалить
+                        </a>
+                    </div>
+                </div>
+                {% empty %}
+                <div class="alert alert-info">Вы не создали ни одной команды</div>
                 {% endfor %}
             </div>
-            {% else %}
-            <p class="text-muted">Вы еще не создали ни одной команды</p>
-            {% endif %}
+        </div>
+
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header">
+                    <h4>Создать новую команду</h4>
+                </div>
+                <div class="card-body">
+                    <a href="{% url 'teams:team_create' %}" class="btn btn-primary">
+                        Создать команду
+                    </a>
+                </div>
+            </div>
         </div>
     </div>
 </div>

@@ -32,7 +32,7 @@
                 <li class="nav-item">
                     <a class="nav-link" href="{% url 'profile' %}">Мой профиль</a>
                 </li>
-                {% if user.is_authenticated and user.created_teams.exists %}
+                {% if user.is_authenticated %}
                 <li class="nav-item">
                     <a class="nav-link" href="{% url 'teams:my_teams' %}">Команды</a>
                 </li>

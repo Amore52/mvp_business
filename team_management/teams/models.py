@@ -3,12 +3,16 @@ from django.contrib.auth import get_user_model
 
 User = get_user_model()
 
-
 class Team(models.Model):
     name = models.CharField(max_length=100, verbose_name="Название команды")
     description = models.TextField(blank=True, verbose_name="Описание")
-    created_by = models.ForeignKey(User, on_delete=models.CASCADE, related_name='created_teams')
-    created_at = models.DateTimeField(auto_now_add=True)
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="Дата создания")
+    created_by = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='created_teams',
+        verbose_name="Создатель"
+    )
 
     class Meta:
         verbose_name = "Команда"
@@ -25,15 +29,35 @@ class TeamMember(models.Model):
         ('admin', 'Администратор'),
     )
 
-    team = models.ForeignKey(Team, on_delete=models.CASCADE, related_name='members')
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='team_memberships')
-    role = models.CharField(max_length=10, choices=ROLE_CHOICES, default='member')
-    joined_at = models.DateTimeField(auto_now_add=True)
+    team = models.ForeignKey(
+        Team,
+        on_delete=models.CASCADE,
+        related_name='members',  # Используем 'members' вместо 'team_members'
+        verbose_name="Команда"
+    )
+    user = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='team_memberships',
+        verbose_name="Пользователь"
+    )
+    role = models.CharField(
+        max_length=10,
+        choices=ROLE_CHOICES,
+        default='member',
+        verbose_name="Роль"
+    )
+    joined_at = models.DateTimeField(auto_now_add=True, verbose_name="Дата вступления")
 
     class Meta:
-        unique_together = ('team', 'user')
+        constraints = [
+            models.UniqueConstraint(
+                fields=['team', 'user'],
+                name='unique_team_member'
+            )
+        ]
         verbose_name = "Участник команды"
         verbose_name_plural = "Участники команд"
 
     def __str__(self):
-        return f"{self.user.username} в {self.team.name} ({self.get_role_display()})"
+        return f"{self.user.username} ({self.get_role_display()}) в {self.team.name}"

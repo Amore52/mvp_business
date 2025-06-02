@@ -1,10 +1,17 @@
 from calendar import monthrange
+
+from django.db import IntegrityError
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
 from .models import Task
 from datetime import datetime, timedelta
 from django.utils import timezone
 from django.contrib import messages
+
+from users.models import User
+
+from teams.models import TeamMember
+
 
 @login_required
 def dashboard_view(request):
@@ -80,7 +87,7 @@ def my_tasks_view(request):
     my_tasks = Task.objects.filter(
         team=request.user.team,
         assignee=request.user
-    ).select_related('assignee', 'created_by')
+    ).select_related('assignee')
 
     context = {
         'my_tasks': my_tasks.order_by('-created_at'),
@@ -91,7 +98,7 @@ def my_tasks_view(request):
 @login_required
 def task_detail_view(request, task_id):
     task = get_object_or_404(Task, id=task_id)
-
+    team_members = User.objects.all()
     # Проверяем, имеет ли пользователь доступ к задаче
     if not (request.user.is_staff or request.user == task.assignee or request.user == task.created_by):
         messages.error(request, "У вас нет доступа к этой задаче")
@@ -109,17 +116,40 @@ def task_detail_view(request, task_id):
         if request.user.is_staff or request.user == task.created_by:
             task.title = request.POST.get('title', task.title)
             task.description = request.POST.get('description', task.description)
-            task.deadline = request.POST.get('deadline', task.deadline)
+
+            # Обработка deadline
+            deadline_str = request.POST.get('deadline')
+            if deadline_str:
+                try:
+                    task.deadline = datetime.strptime(deadline_str, '%Y-%m-%dT%H:%M')
+                except ValueError:
+                    messages.error(request, "Неверный формат даты")
+                    return redirect('task_detail', task_id=task.id)
+
+            # Обработка assignee
             assignee_id = request.POST.get('assignee')
-            if assignee_id:
-                task.assignee_id = assignee_id
+            if assignee_id == '':  # Снятие назначения
+                task.assignee = None
+                messages.success(request, "Исполнитель удалён")
+            elif assignee_id:  # Назначение нового исполнителя
+                try:
+                    assignee = User.objects.get(id=assignee_id)
+                    if team_members.filter(id=assignee_id).exists():  # Проверка, что пользователь в команде
+                        task.assignee = assignee
+                        messages.success(request, f"Исполнитель {assignee.username} назначен")
+                    else:
+                        messages.error(request, "Этот пользователь не в вашей команде")
+                        return redirect('task_detail', task_id=task.id)
+                except User.DoesNotExist:
+                    messages.error(request, "Пользователь не найден")
+                    return redirect('task_detail', task_id=task.id)
+
             task.save()
-            messages.success(request, "Задача обновлена")
             return redirect('task_detail', task_id=task.id)
 
     context = {
         'task': task,
         'status_choices': Task.STATUS_CHOICES,
-        'team_members': task.team.members.all() if task.team else [],
+        'team_members': team_members
     }
     return render(request, 'tasks/task_detail.html', context)

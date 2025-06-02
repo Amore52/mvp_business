@@ -17,7 +17,6 @@ class Task(models.Model):
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='open')
     assignee = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='assigned_tasks')
     team = models.ForeignKey(Team, on_delete=models.CASCADE)
-    created_by = models.ForeignKey(User, on_delete=models.CASCADE, related_name='created_tasks')
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
