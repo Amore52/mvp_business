@@ -1,9 +1,12 @@
+from django.contrib.auth.decorators import login_required
+from django.contrib import messages
 from django.shortcuts import render, redirect
 from django.contrib.auth import login, logout
 from django.contrib.auth.views import LoginView, LogoutView
 from django.urls import reverse_lazy
 
-from .forms import RegisterForm
+from .forms import RegisterForm, UserEditForm, UserDeleteForm
+
 
 def register_view(request):
     if request.method == 'POST':
@@ -39,3 +42,28 @@ class CustomLogoutView(LogoutView):
 
 def dashboard_view(request):
     return render(request, 'dashboard.html')
+
+@login_required
+def profile_view(request):
+    if request.method == 'POST':
+        if 'edit_profile' in request.POST:
+            form = UserEditForm(request.POST, instance=request.user)
+            if form.is_valid():
+                form.save()
+                messages.success(request, 'Профиль успешно обновлен')
+                return redirect('profile')
+        elif 'delete_profile' in request.POST:
+            delete_form = UserDeleteForm(request.POST)
+            if delete_form.is_valid():
+                request.user.delete()
+                logout(request)
+                messages.success(request, 'Ваш аккаунт был успешно удален')
+                return redirect('login')
+    else:
+        form = UserEditForm(instance=request.user)
+        delete_form = UserDeleteForm()
+
+    return render(request, 'profile.html', {
+        'form': form,
+        'delete_form': delete_form
+    })

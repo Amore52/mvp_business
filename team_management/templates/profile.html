@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+{% block title %}Мой профиль{% endblock %}
+{% block content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h3>Мой профиль</h3>
+                </div>
+                <div class="card-body">
+                    <form method="post" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Логин</label>
+                            {{ form.username }}
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Email</label>
+                            {{ form.email }}
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Имя</label>
+                            {{ form.first_name }}
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Фамилия</label>
+                            {{ form.last_name }}
+                        </div>
+                        
+                        <button type="submit" name="edit_profile" class="btn btn-primary">
+                            Сохранить изменения
+                        </button>
+                        <a href="{% url 'dashboard' %}" class="btn btn-secondary">Отмена</a>
+                    </form>
+                    
+                    <hr>
+                    
+                    <h4 class="mt-4">Удаление аккаунта</h4>
+                    <p class="text-danger">Внимание! Это действие необратимо. Все ваши данные будут удалены.</p>
+                    
+                    <form method="post">
+                        {% csrf_token %}
+                        <div class="form-check mb-3">
+                            {{ delete_form.confirm }}
+                            <label class="form-check-label" for="{{ delete_form.confirm.id_for_label }}">
+                                {{ delete_form.confirm.label }}
+                            </label>
+                        </div>
+                        
+                        <button type="submit" name="delete_profile" class="btn btn-danger" 
+                                {% if not delete_form.confirm.value %}disabled{% endif %}>
+                            Удалить аккаунт
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const confirmCheckbox = document.querySelector('#{{ delete_form.confirm.id_for_label }}');
+    const deleteButton = document.querySelector('button[name="delete_profile"]');
+
+    confirmCheckbox.addEventListener('change', function() {
+        deleteButton.disabled = !this.checked;
+    });
+});
+</script>
+{% endblock %}
+{% endblock %}

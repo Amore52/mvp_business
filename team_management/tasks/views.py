@@ -85,7 +85,7 @@ def my_tasks_view(request):
     context = {
         'my_tasks': my_tasks.order_by('-created_at'),
     }
-    return render(request, 'my_tasks.html', context)
+    return render(request, 'tasks/my_tasks.html', context)
 
 
 @login_required
@@ -122,4 +122,4 @@ def task_detail_view(request, task_id):
         'status_choices': Task.STATUS_CHOICES,
         'team_members': task.team.members.all() if task.team else [],
     }
-    return render(request, 'task_detail.html', context)
+    return render(request, 'tasks/task_detail.html', context)
