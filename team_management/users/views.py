@@ -18,25 +18,23 @@ def register_view(request):
 
 
 class CustomLoginView(LoginView):
-    template_name = 'login.html'  # ваш кастомный шаблон
-    redirect_authenticated_user = True  # перенаправлять уже авторизованных пользователей
-    success_url = reverse_lazy('dashboard')  # куда перенаправлять после успешного входа
+    template_name = 'login.html'
+    redirect_authenticated_user = True
+    success_url = reverse_lazy('dashboard')
 
     def form_valid(self, form):
         """Дополнительные действия при успешном входе"""
         remember_me = self.request.POST.get('remember_me')
         if not remember_me:
-            # Устанавливаем сессию на время закрытия браузера, если не стоит "запомнить меня"
             self.request.session.set_expiry(0)
         return super().form_valid(form)
 
 
 class CustomLogoutView(LogoutView):
-    next_page = reverse_lazy('login')  # куда перенаправлять после выхода
+    next_page = reverse_lazy('login')
 
     def dispatch(self, request, *args, **kwargs):
         """Дополнительные действия перед выходом"""
-        # Можно добавить логирование выхода или другие действия
         return super().dispatch(request, *args, **kwargs)
 
 def dashboard_view(request):
