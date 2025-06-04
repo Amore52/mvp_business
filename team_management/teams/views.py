@@ -24,13 +24,13 @@ def my_teams(request):
 
 @login_required
 def team_create(request):
+
     if request.method == 'POST':
         form = TeamCreateForm(request.POST)
         if form.is_valid():
             team = form.save(commit=False)
             team.created_by = request.user
             team.save()
-            # Автоматически добавляем создателя как админа
             TeamMember.objects.create(team=team, user=request.user, role='admin')
             messages.success(request, 'Команда успешно создана!')
             return redirect('teams:team_detail', team_id=team.id)

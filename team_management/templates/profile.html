@@ -11,38 +11,38 @@
                 <div class="card-body">
                     <form method="post" enctype="multipart/form-data">
                         {% csrf_token %}
-                        
+
                         <div class="mb-3">
                             <label class="form-label">Логин</label>
                             {{ form.username }}
                         </div>
-                        
+
                         <div class="mb-3">
                             <label class="form-label">Email</label>
                             {{ form.email }}
                         </div>
-                        
+
                         <div class="mb-3">
                             <label class="form-label">Имя</label>
                             {{ form.first_name }}
                         </div>
-                        
+
                         <div class="mb-3">
                             <label class="form-label">Фамилия</label>
                             {{ form.last_name }}
                         </div>
-                        
+
                         <button type="submit" name="edit_profile" class="btn btn-primary">
                             Сохранить изменения
                         </button>
                         <a href="{% url 'dashboard' %}" class="btn btn-secondary">Отмена</a>
                     </form>
-                    
+
                     <hr>
-                    
+
                     <h4 class="mt-4">Удаление аккаунта</h4>
                     <p class="text-danger">Внимание! Это действие необратимо. Все ваши данные будут удалены.</p>
-                    
+
                     <form method="post">
                         {% csrf_token %}
                         <div class="form-check mb-3">
@@ -51,8 +51,8 @@
                                 {{ delete_form.confirm.label }}
                             </label>
                         </div>
-                        
-                        <button type="submit" name="delete_profile" class="btn btn-danger" 
+
+                        <button type="submit" name="delete_profile" class="btn btn-danger"
                                 {% if not delete_form.confirm.value %}disabled{% endif %}>
                             Удалить аккаунт
                         </button>
