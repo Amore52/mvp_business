@@ -32,17 +32,6 @@
                 <li class="nav-item">
                     <a class="nav-link" href="{% url 'profile' %}">Мой профиль</a>
                 </li>
-                {% if user.is_staff %}
-                <li class="nav-item">
-                    <a class="nav-link" href="{% url 'teams:my_teams' %}">Команды</a>
-                </li>
-                {% endif %}
-                {% if user.is_staff %}
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="{% url 'create_task' %}">Задачи</a>
-                </li>
-                {% endif %}
                 <li class="nav-item nav-logout-form">
                     <form method="post" action="{% url 'logout' %}">
                         {% csrf_token %}

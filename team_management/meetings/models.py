@@ -10,7 +10,7 @@ class Meeting(models.Model):
     date = models.DateField()
     time = models.TimeField()
     duration = models.DurationField(default="01:00")
-    team = models.ForeignKey(Team, on_delete=models.CASCADE)
+    team = models.ForeignKey(Team, on_delete=models.CASCADE, null=True, blank=True)
     participants = models.ManyToManyField(User)
     created_by = models.ForeignKey(User, on_delete=models.CASCADE, related_name='created_meetings')
 

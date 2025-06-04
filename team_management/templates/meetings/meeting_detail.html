@@ -1,0 +1,137 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ meeting.title }}{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row">
+        <div class="col-md-8">
+            <h2>{{ meeting.title }}</h2>
+
+            <div class="d-flex justify-content-between mb-3">
+                <a href="{% if request.GET.next %}{{ request.GET.next }}{% else %}{% url 'dashboard' %}{% endif %}"
+                   class="btn btn-secondary">Назад</a>
+
+                <div>
+                    {% if is_creator %}
+                    <button class="btn btn-primary me-2" data-bs-toggle="modal" data-bs-target="#editMeetingModal">
+                        Редактировать
+                    </button>
+                    <form method="post" class="d-inline">
+                        {% csrf_token %}
+                        <button type="submit" name="delete_meeting" class="btn btn-danger"
+                                onclick="return confirm('Вы уверены, что хотите удалить эту встречу?')">
+                            Удалить встречу
+                        </button>
+                    </form>
+                    {% elif request.user in meeting.participants.all %}
+                    <form method="post" class="d-inline">
+                        {% csrf_token %}
+                        <button type="submit" name="cancel_participation" class="btn btn-warning">
+                            Отменить участие
+                        </button>
+                    </form>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="card mb-4">
+                <div class="card-header bg-info">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span>Организатор: {{ meeting.created_by.username }}</span>
+                        <span>Дата: {{ meeting.date }} в {{ meeting.time }}</span>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <h5 class="card-title">Описание</h5>
+                    <p class="card-text">{{ meeting.description|linebreaks }}</p>
+
+                    <div class="row mt-4">
+                        <div class="col-md-6">
+                            <h5>Информация</h5>
+                            <ul class="list-group">
+                                <li class="list-group-item">
+                                    <strong>Продолжительность:</strong> {{ meeting.duration }}
+                                </li>
+                                <li class="list-group-item">
+                                    <strong>Создана:</strong> {{ meeting.created_at|date:"d.m.Y H:i" }}
+                                </li>
+                            </ul>
+                        </div>
+
+                        <div class="col-md-6">
+                            <h5>Участники ({{ meeting.participants.count }})</h5>
+                            <ul class="list-group">
+                                {% for participant in meeting.participants.all %}
+                                <li class="list-group-item">{{ participant.username }}</li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Модальное окно редактирования встречи -->
+{% if is_creator %}
+<div class="modal fade" id="editMeetingModal" tabindex="-1" aria-labelledby="editMeetingModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="post">
+                {% csrf_token %}
+                <div class="modal-header">
+                    <h5 class="modal-title" id="editMeetingModalLabel">Редактирование встречи</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="title" class="form-label">Название</label>
+                        <input type="text" class="form-control" id="title" name="title" value="{{ meeting.title }}"
+                               required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="description" class="form-label">Описание</label>
+                        <textarea class="form-control" id="description" name="description" rows="3">{{ meeting.description }}</textarea>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="date" class="form-label">Дата</label>
+                            <input type="date" class="form-control" id="date" name="date"
+                                   value="{{ meeting.date|date:'Y-m-d' }}" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="time" class="form-label">Время</label>
+                            <input type="time" class="form-control" id="time" name="time"
+                                   value="{{ meeting.time|time:'H:i' }}" required>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="duration" class="form-label">Продолжительность</label>
+                        <input type="text" class="form-control" id="duration" name="duration"
+                               value="{{ meeting.duration }}" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="participants" class="form-label">Участники</label>
+                        <select name="participants" id="participants" class="form-select" multiple>
+                            {% for user in all_users %}
+                            <option value="{{ user.id }}" {% if user in meeting.participants.all %}selected{% endif %}>
+                                {{ user.username }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                        <small class="text-muted">Для выбора нескольких участников удерживайте Ctrl (Windows) или
+                            Command (Mac)</small>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                    <button type="submit" class="btn btn-primary">Сохранить изменения</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}

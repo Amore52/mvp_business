@@ -1,79 +1,108 @@
 from calendar import monthrange
-from datetime import timedelta
-
-from django.shortcuts import render
-from django.contrib.auth.decorators import login_required
-from .models import Meeting
 from datetime import datetime, timedelta
+from django.contrib import messages
+from django.contrib.auth.decorators import login_required
+from django.shortcuts import render, redirect, get_object_or_404
 from django.utils import timezone
+from django.db.models import Q
+from teams.models import Team
+from users.models import User
+
+from .forms import MeetingForm
+from .models import Meeting
 
 
 @login_required
-def dashboard_view(request):
-    meeteng = Meeting.objects.filter(team=request.user.team)
-
-    # Получаем параметры для календаря (если есть в GET-запросе)
-    try:
-        year = int(request.GET.get('year', timezone.now().year))
-        month = int(request.GET.get('month', timezone.now().month))
-        day = int(request.GET.get('day', timezone.now().day))
-        selected_date = datetime(year, month, day).date()
-    except:
-        selected_date = timezone.now().date()
-        year = selected_date.year
-        month = selected_date.month
-        day = selected_date.day
-
-    # Фильтрация задач для выбранного дня
-    daily_tasks = meeteng.filter(deadline__date=selected_date)
-
-    # Генерация данных для календаря
-    first_day = datetime(year, month, 1).date()
-    last_day = datetime(year, month, monthrange(year, month)[1]).date()
-
-    # Создаем словарь для подсчета задач по дням
-    tasks_count = {}
-    for meeteng in meetengs:
-        day = meeteng.deadline.date()
-        tasks_count[day] = tasks_count.get(day, 0) + 1
-
-    # Генерируем календарь
-    weeks = []
-    current_date = first_day - timedelta(days=first_day.weekday())
-
-    for _ in range(6):  # Максимум 6 недель в месяце
-        week = []
-        for _ in range(7):  # 7 дней в неделе
-            week_day = {
-                'date': current_date,
-                'in_month': current_date.month == month,
-                'tasks_count': tasks_count.get(current_date, 0),
-                'is_today': current_date == timezone.now().date(),
-                'is_selected': current_date == selected_date,
-            }
-            week.append(week_day)
-            current_date += timedelta(days=1)
-        weeks.append(week)
-
-        if current_date > last_day:
-            break
+def my_meetings_view(request):
+    my_meetings = Meeting.objects.filter(participants=request.user).prefetch_related('participants', 'team')
 
     context = {
-        'tasks': meeteng.order_by('-created_at'),
-        'daily_tasks': daily_tasks,
-        'calendar': {
-            'year': year,
-            'month': month,
-            'day': day,
-            'selected_date': selected_date,
-            'next_date': selected_date + timedelta(days=1),
-            'prev_date': selected_date - timedelta(days=1),
-            'next_month': month + 1 if month < 12 else 1,
-            'next_year': year if month < 12 else year + 1,
-            'prev_month': month - 1 if month > 1 else 12,
-            'prev_year': year if month > 1 else year - 1,
-            'weeks': weeks,
-        }
+        'my_meetings': my_meetings,
     }
-    return render(request, 'dashboard.html', context)
+    return render(request, 'meetings/my_meetings.html', context)
 
+
+@login_required
+def create_meeting(request):
+    if request.method == 'POST':
+        form = MeetingForm(request.POST, user=request.user)
+        if form.is_valid():
+            meeting = form.save(commit=False)
+            meeting.created_by = request.user
+            meeting.save()
+            form.save_m2m()  # Сохраняем участников
+            messages.success(request, "Встреча успешно создана")
+            return redirect('dashboard')
+    else:
+        form = MeetingForm(user=request.user)
+
+    return render(request, 'meetings/create_meeting.html', {
+        'form': form,
+    })
+
+
+@login_required
+def meeting_detail(request, meeting_id):
+    meeting = get_object_or_404(Meeting, id=meeting_id)
+    all_users = User.objects.exclude(id=request.user.id)  # Получаем всех пользователей кроме текущего
+    if not (request.user in meeting.participants.all() or request.user == meeting.created_by):
+        messages.error(request, "У вас нет доступа к этой встрече")
+        return redirect('dashboard')
+
+    if request.method == 'POST':
+        if 'delete_meeting' in request.POST:
+            if request.user == meeting.created_by or request.user.is_staff:
+                meeting.delete()
+                messages.success(request, "Встреча удалена")
+                return redirect('dashboard')
+            else:
+                messages.error(request, "Только организатор может удалить встречу")
+        elif 'cancel_participation' in request.POST:
+            meeting.participants.remove(request.user)
+            messages.success(request, "Вы отменили участие во встрече")
+            return redirect('dashboard')
+        else:
+            # Обработка формы редактирования
+            if request.user == meeting.created_by:
+                meeting.title = request.POST.get('title')
+                meeting.description = request.POST.get('description')
+                meeting.date = request.POST.get('date')
+                meeting.time = request.POST.get('time')
+                meeting.duration = request.POST.get('duration')
+
+                # Получаем список ID выбранных участников
+                participants_ids = request.POST.getlist('participants')
+                # Очищаем текущих участников и добавляем новых
+                meeting.participants.clear()
+                for user_id in participants_ids:
+                    user = get_object_or_404(User, id=user_id)
+                    meeting.participants.add(user)
+
+                meeting.save()
+                messages.success(request, "Встреча успешно обновлена")
+                return redirect('meeting_detail', meeting_id=meeting.id)
+
+    return render(request, 'meetings/meeting_detail.html', {
+        'meeting': meeting,
+        'is_creator': request.user == meeting.created_by,
+        'all_users': all_users
+    })
+
+
+def _check_time_conflict(user, date, time, duration, meeting_id=None):
+    """Проверка наложения встреч по времени"""
+    end_time = (datetime.combine(date, time) + duration).time()
+
+    conflicts = Meeting.objects.filter(
+        Q(participants=user) | Q(created_by=user),
+        date=date
+    ).exclude(
+        id=meeting_id
+    ).filter(
+        Q(time__lt=end_time,
+          time__gte=time) |
+        Q(time__lt=time,
+          time__gte=(datetime.combine(date, time) - duration).time())
+    )
+
+    return conflicts.exists()

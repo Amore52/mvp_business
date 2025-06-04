@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% block title %}Мои встречи{% endblock %}
+{% block content %}
+<div class="container">
+    <h2>Мои встречи</h2>
+
+    <div class="mb-4">
+        <a href="{% url 'dashboard' %}" class="btn btn-secondary">Назад</a>
+        <a href="{% url 'my_tasks' %}" class="btn btn-secondary">Мои задачи</a>
+        <a href="{% url 'profile' %}" class="btn btn-secondary">Оценки</a>
+    </div>
+
+    <div class="row">
+        {% for meeting  in my_meetings %}
+        <div class="col-md-4 mb-4">
+            <div class="card">
+                <div class="card-header text-white" style="background-color: #6f42c1;" {% if meeting.status == 'done' %}bg-success{% elif task.status == 'in_progress' %}bg-warning{% else %}bg-info{% endif %}">
+                    <h5 class="card-title">{{ meeting.title }}</h5>
+                </div>
+                <div class="card-body">
+                            <p class="card-text">{{ meeting.description|truncatechars:100 }}</p>
+                            <ul class="list-group list-group-flush">
+                                <li class="list-group-item">
+                                    <strong>Дата:</strong> {{ meeting.date|date:"d.m.Y" }} в {{ meeting.time|time:"H:i" }}
+                                </li>
+                                <li class="list-group-item">
+                                    <strong>Продолжительность:</strong> {{ meeting.duration }}
+                                </li>
+                                <li class="list-group-item">
+                                    <strong>Организатор:</strong> {{ meeting.created_by.username }}
+                                </li>
+                            </ul>
+                        </div>
+                        <div class="card-footer">
+                            <a href="{% url 'meeting_detail' meeting.id %}?next={{ request.get_full_path|urlencode }}"
+                               class="btn btn-sm btn-outline-primary">Подробнее</a>
+                        </div>
+                    </div>
+            </div>
+        </div>
+        {% empty %}
+        <div class="col-12">
+            <div class="alert alert-info">У вас нет назначенных задач</div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

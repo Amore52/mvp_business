@@ -6,11 +6,16 @@
         <!-- Основной контент слева -->
         <div class="col-md-8">
             <h2>Добро пожаловать, {{ user.username }}</h2>
-            <p>Это ваш личный кабинет.</p>
-
             <div class="mb-4">
                 <a href="{% url 'my_tasks' %}" class="btn btn-primary">Мои задачи</a>
+                <a href="{% url 'my_meetings' %}" class="btn btn-primary">Мои встречи</a>
+                {% if user.is_staff %}
+                <a href="{% url 'create_task' %}" class="btn btn-success">Создать задачу</a>
+                <a href="{% url 'create_meeting' %}" class="btn" style="background-color: #6f42c1; color: white;">Создать
+                    встречу</a>
+                {% endif %}
             </div>
+
             <!-- Все задачи команды -->
             <h3>Все задачи</h3>
             <div class="row">
@@ -44,6 +49,38 @@
                         </div>
                         <div class="card-footer">
                             <a href="{% url 'task_detail' task.id %}?next={{ request.get_full_path|urlencode }}"
+                               class="btn btn-sm btn-outline-primary">Подробнее</a>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+
+            <!-- Ближайшие встречи -->
+            <h3>Ближайшие встречи</h3>
+            <div class="row">
+                {% for meeting in upcoming_meetings %}
+                <div class="col-md-6 mb-4">
+                    <div class="card h-100">
+                        <div class="card-header text-white" style="background-color: #6f42c1;">
+                            <h5 class="card-title">{{ meeting.title }}</h5>
+                        </div>
+                        <div class="card-body">
+                            <p class="card-text">{{ meeting.description|truncatechars:100 }}</p>
+                            <ul class="list-group list-group-flush">
+                                <li class="list-group-item">
+                                    <strong>Дата:</strong> {{ meeting.date|date:"d.m.Y" }} в {{ meeting.time|time:"H:i" }}
+                                </li>
+                                <li class="list-group-item">
+                                    <strong>Продолжительность:</strong> {{ meeting.duration }}
+                                </li>
+                                <li class="list-group-item">
+                                    <strong>Организатор:</strong> {{ meeting.created_by.username }}
+                                </li>
+                            </ul>
+                        </div>
+                        <div class="card-footer">
+                            <a href="{% url 'meeting_detail' meeting.id %}?next={{ request.get_full_path|urlencode }}"
                                class="btn btn-sm btn-outline-primary">Подробнее</a>
                         </div>
                     </div>
@@ -97,14 +134,14 @@
                                     {% if day.tasks_count %}
                                     <span class="badge bg-info rounded-pill"
                                           style="font-size: 0.6rem; padding: 0.15rem 0.3rem;">
-                                                {{ day.tasks_count }}
-                                            </span>
+                                        {{ day.tasks_count }}
+                                    </span>
                                     {% endif %}
                                     {% if day.meetings_count %}
-                                    <span class="badge bg-warning rounded-pill"
-                                          style="font-size: 0.6rem; padding: 0.15rem 0.3rem;">
-                                                {{ day.meetings_count }}
-                                            </span>
+                                    <span class="badge rounded-pill"
+                                          style="background-color: #6f42c1; color: white; font-size: 0.6rem; padding: 0.15rem 0.3rem;">
+    {{ day.meetings_count }}
+</span>
                                     {% endif %}
                                 </div>
                                 {% endif %}
@@ -151,6 +188,27 @@
                     </ul>
                     {% else %}
                     <p class="text-muted mb-3">Нет задач на этот день</p>
+                    {% endif %}
+
+                    <h6>Встречи</h6>
+                    {% if daily_meetings %}
+                    <ul class="list-group list-group-flush">
+                        {% for meeting in daily_meetings %}
+                        <li class="list-group-item p-2">
+                            <div class="d-flex justify-content-between">
+                                <strong class="text-truncate" style="max-width: 70%;">{{ meeting.title }}</strong>
+                                <span class="badge bg-secondary" style="font-size: 0.7rem;">
+                                    {{ meeting.time|time:"H:i" }}
+                                </span>
+                            </div>
+                            <div class="small text-muted">
+                                {{ meeting.team.name }} • {{ meeting.created_by.username }}
+                            </div>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                    {% else %}
+                    <p class="text-muted">Нет встреч на этот день</p>
                     {% endif %}
                 </div>
             </div>

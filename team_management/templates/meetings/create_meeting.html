@@ -1,0 +1,103 @@
+{% extends "base.html" %}
+{% block title %}Создать новую встречу | MVP Task Manager{% endblock %}
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8 col-lg-6">
+            <div class="card shadow-sm">
+                <div class="card-header text-white" style="background-color: #6f42c1;">
+                    <h2 class="h5 mb-0">Создать новую встречу</h2>
+                </div>
+                <div class="card-body">
+                    <form method="post" class="needs-validation" novalidate>
+                        {% csrf_token %}
+
+                        <div class="mb-3">
+                            <label for="id_title" class="form-label">Название встречи</label>
+                            {{ form.title }}
+                            <div class="invalid-feedback">Пожалуйста, введите название встречи</div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="id_description" class="form-label">Описание</label>
+                            {{ form.description }}
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="id_date" class="form-label">Дата</label>
+                                {{ form.date }}
+                                <div class="invalid-feedback">Пожалуйста, укажите дату</div>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="id_time" class="form-label">Время</label>
+                                {{ form.time }}
+                                <div class="invalid-feedback">Пожалуйста, укажите время</div>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="id_duration" class="form-label">Продолжительность (часы:минуты)</label>
+                            {{ form.duration }}
+                            <div class="invalid-feedback">Пожалуйста, укажите продолжительность</div>
+                        </div>
+
+
+                        <div class="mb-4">
+                            <label for="id_participants" class="form-label">Участники</label>
+                            {{ form.participants }}
+                        </div>
+
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                            <a href="{% url 'dashboard' %}" class="btn btn-outline-secondary me-md-2">Отмена</a>
+                            <button type="submit" class="btn btn-primary">Создать встречу</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Валидация формы
+    (function() {
+        'use strict';
+        window.addEventListener('load', function() {
+            var forms = document.getElementsByClassName('needs-validation');
+            var validation = Array.prototype.filter.call(forms, function(form) {
+                form.addEventListener('submit', function(event) {
+                    if (form.checkValidity() === false) {
+                        event.preventDefault();
+                        event.stopPropagation();
+                    }
+                    form.classList.add('was-validated');
+                }, false);
+            });
+        }, false);
+    })();
+
+    // Добавляем классы Bootstrap к элементам формы
+    document.addEventListener('DOMContentLoaded', function() {
+        const inputs = document.querySelectorAll('input, select, textarea');
+        inputs.forEach(input => {
+            input.classList.add('form-control');
+        });
+
+        // Особые случаи
+        const selectMultiple = document.getElementById('id_participants');
+        if (selectMultiple) {
+            selectMultiple.classList.add('form-select');
+            selectMultiple.setAttribute('multiple', 'multiple');
+        }
+    });
+</script>
+
+<style>
+    /* Дополнительные стили для мультиселекта */
+    select[multiple] {
+        height: auto;
+        min-height: 100px;
+    }
+</style>
+{% endblock %}
