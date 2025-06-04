@@ -82,64 +82,158 @@
                 </div>
             </div>
 
-            <!-- Блок комментариев (будет реализован позже) -->
-            <div class="card">
+            <!-- Блок комментариев -->
+            <!-- Блок комментариев -->
+            <div class="card mb-4">
                 <div class="card-header">
-                    <h5 class="mb-0">Комментарии</h5>
+                    <h5 class="mb-0">Комментарии ({{ comments.count }})</h5>
                 </div>
                 <div class="card-body">
-                    <p class="text-muted">Функционал комментариев будет добавлен в ближайшее время</p>
+                    {% if comments %}
+                    <div class="comments-list mb-4">
+                        {% for comment in comments %}
+                        <div class="comment mb-3 pb-3 border-bottom" id="comment-{{ comment.id }}">
+                            <!-- Блок просмотра комментария -->
+                            <div class="comment-view">
+                                <div class="d-flex justify-content-between mb-2">
+                                    <div class="d-flex align-items-center">
+                                        <span class="fw-bold me-2">{{ comment.author.username }}</span>
+                                        <small class="text-muted">{{ comment.created_at|date:"d.m.Y H:i" }}</small>
+                                        {% if comment.created_at != comment.updated_at %}
+                                        <small class="text-muted ms-2">(изменено)</small>
+                                        {% endif %}
+                                    </div>
+                                    {% if comment.author == request.user or request.user.is_staff %}
+                                    <div>
+                                        <button class="btn btn-sm btn-outline-secondary edit-comment-btn"
+                                                data-comment-id="{{ comment.id }}"
+                                                title="Редактировать">
+                                            <i class="bi bi-pencil"></i> Изменить
+                                        </button>
+                                        <form method="post" action="{% url 'task_detail' task_id=task.id %}"
+                                              class="d-inline">
+                                            {% csrf_token %}
+                                            <input type="hidden" name="comment_id" value="{{ comment.id }}">
+                                            <button type="submit" name="delete_comment"
+                                                    class="btn btn-sm btn-outline-danger"
+                                                    title="Удалить"
+                                                    onclick="return confirm('Удалить этот комментарий?')">
+                                                <i class="bi bi-trash"></i> Удалить
+                                            </button>
+                                        </form>
+                                    </div>
+                                    {% endif %}
+                                </div>
+                                <div class="comment-text">{{ comment.text|linebreaks }}</div>
+                            </div>
+
+                            <!-- Форма редактирования (изначально скрыта) -->
+                            <form method="post" class="edit-comment-form d-none mt-3" id="edit-form-{{ comment.id }}">
+                                {% csrf_token %}
+                                <input type="hidden" name="comment_id" value="{{ comment.id }}">
+                                <div class="mb-3">
+                                    <textarea class="form-control" name="comment_text" rows="3" required>{{ comment.text }}</textarea>
+                                </div>
+                                <button type="submit" name="edit_comment" class="btn btn-primary btn-sm">
+                                    Сохранить
+                                </button>
+                                <button type="button" class="btn btn-secondary btn-sm cancel-edit">
+                                    Отмена
+                                </button>
+                            </form>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <p class="text-muted">Пока нет комментариев</p>
+                    {% endif %}
+
+                    <!-- Форма добавления нового комментария -->
+                    <form method="post" class="mt-4">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                <textarea class="form-control" name="comment_text" rows="3"
+                          placeholder="Напишите ваш комментарий..." required></textarea>
+                        </div>
+                        <button type="submit" name="add_comment" class="btn btn-primary">
+                            Добавить комментарий
+                        </button>
+                    </form>
                 </div>
             </div>
-        </div>
-    </div>
-</div>
 
-<!-- Модальное окно редактирования задачи -->
-{% if request.user.is_staff or request.user == task.created_by %}
-<div class="modal fade" id="editTaskModal" tabindex="-1" aria-labelledby="editTaskModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <form method="post">
-                {% csrf_token %}
-                <div class="modal-header">
-                    <h5 class="modal-title" id="editTaskModalLabel">Редактирование задачи</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            <!-- JavaScript для редактирования комментариев -->
+            <script>
+                document.addEventListener('DOMContentLoaded', function() {
+                    // Показ формы редактирования
+                    document.querySelectorAll('.edit-comment-btn').forEach(btn => {
+                        btn.addEventListener('click', function() {
+                            const commentId = this.dataset.commentId;
+                            document.querySelector(`#comment-${commentId} .comment-view`).classList.add('d-none');
+                            document.querySelector(`#edit-form-${commentId}`).classList.remove('d-none');
+                        });
+                    });
+
+                    // Скрытие формы редактирования
+                    document.querySelectorAll('.cancel-edit').forEach(btn => {
+                        btn.addEventListener('click', function() {
+                            const form = this.closest('.edit-comment-form');
+                            const commentId = form.querySelector('input[name="comment_id"]').value;
+                            form.classList.add('d-none');
+                            document.querySelector(`#comment-${commentId} .comment-view`).classList.remove('d-none');
+                        });
+                    });
+                });
+            </script>
+
+            <!-- Модальное окно редактирования задачи -->
+            {% if request.user.is_staff or request.user == task.created_by %}
+            <div class="modal fade" id="editTaskModal" tabindex="-1" aria-labelledby="editTaskModalLabel"
+                 aria-hidden="true">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <form method="post">
+                            {% csrf_token %}
+                            <div class="modal-header">
+                                <h5 class="modal-title" id="editTaskModalLabel">Редактирование задачи</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal"
+                                        aria-label="Close"></button>
+                            </div>
+                            <div class="modal-body">
+                                <div class="mb-3">
+                                    <label for="title" class="form-label">Название</label>
+                                    <input type="text" class="form-control" id="title" name="title"
+                                           value="{{ task.title }}"
+                                           required>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="description" class="form-label">Описание</label>
+                                    <textarea class="form-control" id="description" name="description" rows="3">{{ task.description }}</textarea>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="deadline" class="form-label">Срок выполнения</label>
+                                    <input type="datetime-local" class="form-control" id="deadline" name="deadline"
+                                           value="{{ task.deadline|date:'Y-m-d\TH:i' }}" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="assignee" class="form-label">Исполнитель</label>
+                                    <select name="assignee" class="form-select">
+                                        <option value="">Не назначено</option>
+                                        {% for member in team_members %}
+                                        <option value="{{ member.id }}" {% if task.assignee == member %}selected{% endif %}>
+                                            {{ member.username }}
+                                        </option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                                <button type="submit" class="btn btn-primary">Сохранить изменения</button>
+                            </div>
+                        </form>
+                    </div>
                 </div>
-                <div class="modal-body">
-                    <div class="mb-3">
-                        <label for="title" class="form-label">Название</label>
-                        <input type="text" class="form-control" id="title" name="title" value="{{ task.title }}"
-                               required>
-                    </div>
-                    <div class="mb-3">
-                        <label for="description" class="form-label">Описание</label>
-                        <textarea class="form-control" id="description" name="description" rows="3">{{ task.description }}</textarea>
-                    </div>
-                    <div class="mb-3">
-                        <label for="deadline" class="form-label">Срок выполнения</label>
-                        <input type="datetime-local" class="form-control" id="deadline" name="deadline"
-                               value="{{ task.deadline|date:'Y-m-d\TH:i' }}" required>
-                    </div>
-                    <div class="mb-3">
-                        <label for="assignee" class="form-label">Исполнитель</label>
-                        <select name="assignee" class="form-select">
-                            <option value="">Не назначено</option>
-                            {% for member in team_members %}
-                            <option value="{{ member.id }}" {% if task.assignee == member %}selected{% endif %}>
-                                {{ member.username }}
-                            </option>
-                            {% endfor %}
-                        </select>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
-                    <button type="submit" class="btn btn-primary">Сохранить изменения</button>
-                </div>
-            </form>
-        </div>
-    </div>
-</div>
-{% endif %}
-{% endblock %}
+            </div>
+            {% endif %}
+            {% endblock %}

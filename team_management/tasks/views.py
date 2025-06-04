@@ -10,7 +10,7 @@ from teams.models import TeamMember
 from users.models import User
 
 from .forms import TaskForm
-from .models import Task
+from .models import Task, Comment
 
 
 @login_required
@@ -75,10 +75,7 @@ def dashboard_view(request):
 
 @login_required
 def my_tasks_view(request):
-    my_tasks = Task.objects.filter(
-        team=request.user.team,
-        assignee=request.user
-    ).select_related('assignee')
+    my_tasks = Task.objects.filter(assignee=request.user).select_related('assignee', 'team')
 
     context = {
         'my_tasks': my_tasks.order_by('-created_at'),
@@ -96,6 +93,12 @@ def task_detail_view(request, task_id):
             return _handle_delete_task(request, task)
         elif 'status' in request.POST:
             return _handle_status_update(request, task)
+        elif 'add_comment' in request.POST:
+            return _handle_add_comment(request, task)
+        elif 'delete_comment' in request.POST:
+            return _handle_delete_comment(request, task)
+        elif 'edit_comment' in request.POST:
+            return _handle_edit_comment(request, task)
         else:
             return _handle_task_edit(request, task)
 
@@ -178,6 +181,72 @@ def _prepare_task_context(request, task):
         'can_change_status': request.user.is_staff or request.user == task.assignee,
     }
 
+
+def _handle_add_comment(request, task):
+    """Добавление нового комментария"""
+    text = request.POST.get('comment_text', '').strip()
+    if not text:
+        messages.error(request, "Комментарий не может быть пустым")
+        return redirect('task_detail', task_id=task.id)
+
+    Comment.objects.create(
+        task=task,
+        author=request.user,
+        text=text
+    )
+    messages.success(request, "Комментарий добавлен")
+    return redirect('task_detail', task_id=task.id)
+
+
+def _handle_edit_comment(request, task):
+    """Редактирование комментария"""
+    comment_id = request.POST.get('comment_id')
+    new_text = request.POST.get('comment_text', '').strip()
+
+    if not new_text:
+        messages.error(request, "Комментарий не может быть пустым")
+        return redirect('task_detail', task_id=task.id)
+
+    try:
+        comment = Comment.objects.get(id=comment_id, task=task)
+        if comment.author == request.user or request.user.is_staff:
+            comment.text = new_text
+            comment.save()
+            messages.success(request, "Комментарий обновлен")
+        else:
+            messages.error(request, "Вы не можете редактировать этот комментарий")
+    except Comment.DoesNotExist:
+        messages.error(request, "Комментарий не найден")
+
+    return redirect('task_detail', task_id=task.id)
+
+def _handle_delete_comment(request, task):
+    """Удаление комментария"""
+    comment_id = request.POST.get('comment_id')
+    try:
+        comment = Comment.objects.get(id=comment_id, task=task)
+        if comment.author == request.user or request.user.is_staff:
+            comment.delete()
+            messages.success(request, "Комментарий удален")
+        else:
+            messages.error(request, "Вы не можете удалить этот комментарий")
+    except Comment.DoesNotExist:
+        messages.error(request, "Комментарий не найден")
+    return redirect('task_detail', task_id=task.id)
+
+
+def _prepare_task_context(request, task):
+    """Подготовка контекста для шаблона"""
+    team_members = User.objects.filter(team_memberships__team=task.team) if task.team else User.objects.none()
+    return {
+        'task': task,
+        'status_choices': Task.STATUS_CHOICES,
+        'team_members': team_members,
+        'can_edit': request.user.is_staff,
+        'can_delete': request.user.is_staff,
+        'can_change_status': request.user.is_staff or request.user == task.assignee,
+        'comments': task.comments.all().select_related('author'),  # Добавляем комментарии в контекст
+    }
 
 @login_required
 def create_task_view(request):

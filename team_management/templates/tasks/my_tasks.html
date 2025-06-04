@@ -21,8 +21,7 @@
                     <p class="card-text">{{ task.description|truncatechars:100 }}</p>
                     <ul class="list-group list-group-flush">
                         <li class="list-group-item">
-                            <strong>Создана:</strong> ({{ task.created_at|date:"d.m.Y
-                            H:i" }})
+                            <strong>Создана:</strong> {{ task.created_at|date:"d.m.Y H:i" }}
                         </li>
                         <li class="list-group-item">
                             <strong>Срок:</strong> {{ task.deadline|date:"d.m.Y H:i" }}
