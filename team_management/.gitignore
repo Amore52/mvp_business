@@ -1,0 +1,43 @@
+# Виртуальное окружение
+venv/
+env/
+virtualenv/
+
+# Кэш интерпретатора
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Логи и файлы debug
+logs/
+*.log
+db.sqlite3
+.sqllite/
+
+# Файлы среды
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+.env.example
+
+# Media и static (если используются локально)
+/media/
+/staticfiles/
+
+# Результаты тестов
+htmlcov/
+.coverage
+coverage.xml
+.pytest_cache/
+
+# IDE / Редакторы
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# macOS
+.DS_Store

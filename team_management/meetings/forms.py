@@ -1,12 +1,8 @@
 from django import forms
-from django.db.models import Q
-from django.utils import timezone
 from django.core.exceptions import ValidationError
+from django.utils import timezone
+
 from .models import Meeting
-from teams.models import Team
-
-
-from teams.models import User
 
 
 class MeetingForm(forms.ModelForm):
@@ -18,8 +14,7 @@ class MeetingForm(forms.ModelForm):
         meeting = super().save(commit=False)
         if commit:
             meeting.save()
-            # Преобразуем User в TeamMember перед добавлением
-            team_member = self.user.teammember_set.first()  # или другой способ
+            team_member = self.user.teammember_set.first()
             meeting.participants.add(team_member)
         return meeting
 

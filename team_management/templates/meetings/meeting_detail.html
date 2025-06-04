@@ -36,7 +36,7 @@
             </div>
 
             <div class="card mb-4">
-                <div class="card-header bg-info">
+                <div class="card-header bg-info text-white" style="background-color: #6f42c1 !important;">
                     <div class="d-flex justify-content-between align-items-center">
                         <span>Организатор: {{ meeting.created_by.username }}</span>
                         <span>Дата: {{ meeting.date }} в {{ meeting.time }}</span>
@@ -116,14 +116,24 @@
                         <label for="participants" class="form-label">Участники</label>
                         <select name="participants" id="participants" class="form-select" multiple>
                             {% for user in all_users %}
-                            <option value="{{ user.id }}" {% if user in meeting.participants.all %}selected{% endif %}>
+                            <option value="{{ user.id }}">
                                 {{ user.username }}
                             </option>
                             {% endfor %}
                         </select>
-                        <small class="text-muted">Для выбора нескольких участников удерживайте Ctrl (Windows) или
-                            Command (Mac)</small>
                     </div>
+                    <!-- Активируйте Select2 -->
+                    <script>
+                        $(document).ready(function() {
+                            $('#participants').select2({
+                                placeholder: "Начните вводить имя...",
+                                dropdownParent: $('#editMeetingModal'),
+                                allowClear: true,
+                                width: '100%',
+                                language: "ru"
+                            });
+                        });
+                    </script>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>

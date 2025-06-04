@@ -1,13 +1,11 @@
-from calendar import monthrange
-from datetime import datetime, timedelta
+from datetime import datetime
+
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
-from django.shortcuts import render, redirect, get_object_or_404
-from django.utils import timezone
 from django.db.models import Q
-from teams.models import Team
-from users.models import User
+from django.shortcuts import render, redirect, get_object_or_404
 
+from users.models import User
 from .forms import MeetingForm
 from .models import Meeting
 
@@ -24,6 +22,7 @@ def my_meetings_view(request):
 
 @login_required
 def create_meeting(request):
+    all_users = User.objects.exclude(id=request.user.id)
     if request.method == 'POST':
         form = MeetingForm(request.POST, user=request.user)
         if form.is_valid():
@@ -38,6 +37,7 @@ def create_meeting(request):
 
     return render(request, 'meetings/create_meeting.html', {
         'form': form,
+        'all_users': all_users
     })
 
 

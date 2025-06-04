@@ -43,10 +43,28 @@
                         </div>
 
 
-                        <div class="mb-4">
-                            <label for="id_participants" class="form-label">Участники</label>
-                            {{ form.participants }}
-                        </div>
+<div class="mb-3">
+    <label for="participants" class="form-label">Участники</label>
+    <select name="participants" id="participants" class="form-select" multiple>
+        {% for user in all_users %}
+        <option value="{{ user.id }}">
+            {{ user.username }}
+        </option>
+        {% endfor %}
+    </select>
+</div>
+
+<!-- Активируйте Select2 -->
+<script>
+    $(document).ready(function() {
+        $('#participants').select2({
+            placeholder: "Начните вводить имя...",
+            allowClear: true,
+            width: '100%',
+            language: "ru"
+        });
+    });
+</script>
 
                         <div class="d-grid gap-2 d-md-flex justify-content-md-end">
                             <a href="{% url 'dashboard' %}" class="btn btn-outline-secondary me-md-2">Отмена</a>
