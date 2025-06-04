@@ -2,7 +2,7 @@ from django.contrib import admin
 from django.urls import path, include
 from django.views.generic import RedirectView
 
-from tasks.views import dashboard_view, my_tasks_view, task_detail_view, create_task_view
+from tasks.views import dashboard_view, my_tasks_view, task_detail_view, create_task_view, rate_task
 
 
 urlpatterns = [
@@ -14,5 +14,6 @@ urlpatterns = [
     path('task/<int:task_id>/', task_detail_view, name='task_detail'),
     path('teams/', include('teams.urls', namespace='teams')),
     path('tasks/create/', create_task_view, name='create_task'),
+    path('task/<int:task_id>/rate/', rate_task, name='rate_task'),
 
 ]

@@ -78,11 +78,43 @@
                             </form>
                             {% endif %}
                         </div>
+                        {% if task.rating %}
+                        <div class="card-footer">
+                            <h5>Оценка работы</h5>
+                            <p>Оценка: {{ task.rating.score }}/5</p>
+                            <p>Комментарий: {{ task.rating.comment|default:"-" }}</p>
+                            <small class="text-muted">Оценено: {{ task.rating.rated_at|date:"d.m.Y H:i" }}</small>
+                        </div>
+                        {% endif %}
                     </div>
                 </div>
             </div>
 
-            <!-- Блок комментариев -->
+            <!-- Показываем форму оценки только если задача не была оценена админом и пользователь имеет право оценивать -->
+            {% if can_rate and not task.rating %}
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h4>Оценка задачи</h4>
+                </div>
+                <div class="card-body">
+                    {% if existing_rating %}
+                    <div class="alert alert-info">
+                        Вы уже оценили эту задачу: {{ existing_rating.score }}/5
+                        <p>{{ existing_rating.comment }}</p>
+                    </div>
+                    {% endif %}
+
+                    <form method="post">
+                        {% csrf_token %}
+                        {{ rating_form.as_p }}
+                        <button type="submit" name="rate_task" class="btn btn-primary">
+                            {% if existing_rating %}Обновить оценку{% else %}Оценить{% endif %}
+                        </button>
+                    </form>
+                </div>
+            </div>
+            {% endif %}
+
             <!-- Блок комментариев -->
             <div class="card mb-4">
                 <div class="card-header">

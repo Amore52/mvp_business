@@ -36,3 +36,14 @@ class Comment(models.Model):
 
     def __str__(self):
         return f"Comment by {self.author.username} on {self.task.title}"
+
+class TaskRating(models.Model):
+    task = models.OneToOneField(Task, on_delete=models.CASCADE, related_name='rating')
+    score = models.PositiveSmallIntegerField(choices=[(i, str(i)) for i in range(1, 6)])
+    rated_by = models.ForeignKey(User, on_delete=models.CASCADE)
+    rated_at = models.DateTimeField(auto_now_add=True)
+    comment = models.TextField(blank=True, null=True)
+
+    class Meta:
+        verbose_name = 'Оценка задачи'
+        verbose_name_plural = 'Оценки задач'

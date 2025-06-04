@@ -9,7 +9,7 @@ from django.utils import timezone
 from teams.models import TeamMember
 from users.models import User
 
-from .forms import TaskForm
+from .forms import TaskForm, TaskRatingForm
 from .models import Task, Comment
 
 
@@ -99,6 +99,8 @@ def task_detail_view(request, task_id):
             return _handle_delete_comment(request, task)
         elif 'edit_comment' in request.POST:
             return _handle_edit_comment(request, task)
+        elif 'rate_task' in request.POST:
+            return _handle_task_rating(request, task)
         else:
             return _handle_task_edit(request, task)
 
@@ -121,17 +123,6 @@ def _handle_delete_task(request, task):
     task.delete()
     messages.success(request, "Задача успешно удалена")
     return redirect('dashboard')
-
-
-def _handle_status_update(request, task):
-    """Обновление статуса задачи"""
-    if not (request.user.is_staff or request.user == task.assignee):
-        messages.error(request, "Вы не можете изменять статус этой задачи")
-        return redirect('task_detail', task_id=task.id)
-    task.status = request.POST['status']
-    task.save()
-    messages.success(request, "Статус задачи обновлен")
-    return redirect('task_detail', task_id=task.id)
 
 
 def _handle_task_edit(request, task):
@@ -168,18 +159,6 @@ def _handle_task_edit(request, task):
     task.save()
     return redirect('task_detail', task_id=task.id)
 
-
-def _prepare_task_context(request, task):
-    """Подготовка контекста для шаблона"""
-    team_members = User.objects.filter(team_memberships__team=task.team) if task.team else User.objects.none()
-    return {
-        'task': task,
-        'status_choices': Task.STATUS_CHOICES,
-        'team_members': team_members,
-        'can_edit': request.user.is_staff,
-        'can_delete': request.user.is_staff,
-        'can_change_status': request.user.is_staff or request.user == task.assignee,
-    }
 
 
 def _handle_add_comment(request, task):
@@ -235,18 +214,6 @@ def _handle_delete_comment(request, task):
     return redirect('task_detail', task_id=task.id)
 
 
-def _prepare_task_context(request, task):
-    """Подготовка контекста для шаблона"""
-    team_members = User.objects.filter(team_memberships__team=task.team) if task.team else User.objects.none()
-    return {
-        'task': task,
-        'status_choices': Task.STATUS_CHOICES,
-        'team_members': team_members,
-        'can_edit': request.user.is_staff,
-        'can_delete': request.user.is_staff,
-        'can_change_status': request.user.is_staff or request.user == task.assignee,
-        'comments': task.comments.all().select_related('author'),  # Добавляем комментарии в контекст
-    }
 
 @login_required
 def create_task_view(request):
@@ -265,3 +232,87 @@ def create_task_view(request):
         'form': form,
         'teams': request.user.team_memberships.all()
     })
+
+
+@login_required
+def rate_task(request, task_id):
+    task = get_object_or_404(Task, id=task_id)
+
+    if not request.user.is_staff:
+        raise PermissionDenied("Только администратор может оценивать задачи")
+
+    if task.status != 'done':
+        messages.error(request, "Можно оценивать только завершенные задачи")
+        return redirect('task_detail', task_id=task.id)
+
+    if request.method == 'POST':
+        form = TaskRatingForm(request.POST)
+        if form.is_valid():
+            rating = form.save(commit=False)
+            rating.task = task
+            rating.rated_by = request.user
+            rating.save()
+            messages.success(request, "Оценка сохранена")
+            return redirect('task_detail', task_id=task.id)
+    else:
+        form = TaskRatingForm()
+
+    return render(request, 'tasks/task_detail.html', {
+        'form': form,
+        'task': task
+    })
+
+
+def _handle_status_update(request, task):
+    """Обновление статуса задачи"""
+    if not (request.user.is_staff or request.user == task.assignee):
+        messages.error(request, "Вы не можете изменять статус этой задачи")
+        return redirect('task_detail', task_id=task.id)
+
+    new_status = request.POST['status']
+    task.status = new_status
+    task.save()
+    messages.success(request, "Статус задачи обновлен")
+    return redirect('task_detail', task_id=task.id)
+
+
+def _handle_task_rating(request, task):
+    """Обработка оценки задачи"""
+    if not request.user.is_staff:
+        messages.error(request, "Только администратор может оценивать задачи")
+        return redirect('task_detail', task_id=task.id)
+
+    if task.status != 'done':
+        messages.error(request, "Можно оценивать только завершенные задачи")
+        return redirect('task_detail', task_id=task.id)
+
+    form = TaskRatingForm(request.POST)
+    if form.is_valid():
+        rating = form.save(commit=False)
+        rating.task = task
+        rating.rated_by = request.user
+        rating.save()
+        messages.success(request, "Оценка сохранена")
+    else:
+        messages.error(request, "Ошибка при сохранении оценки")
+
+    return redirect('task_detail', task_id=task.id)
+
+
+def _prepare_task_context(request, task):
+    """Подготовка контекста для шаблона"""
+    team_members = User.objects.filter(team_memberships__team=task.team) if task.team else User.objects.none()
+    existing_rating = task.ratings.filter(rated_by=request.user).first() if hasattr(task, 'ratings') else None
+
+    return {
+        'task': task,
+        'status_choices': Task.STATUS_CHOICES,
+        'team_members': team_members,
+        'can_edit': request.user.is_staff,
+        'can_delete': request.user.is_staff,
+        'can_change_status': request.user.is_staff or request.user == task.assignee,
+        'can_rate': request.user.is_staff and task.status == 'done',
+        'existing_rating': existing_rating,
+        'rating_form': TaskRatingForm(instance=existing_rating),
+        'comments': task.comments.all().select_related('author'),
+    }

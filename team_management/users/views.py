@@ -1,11 +1,16 @@
+from datetime import timedelta
+
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
+from django.db.models import Avg
 from django.shortcuts import render, redirect
 from django.contrib.auth import login, logout
 from django.contrib.auth.views import LoginView, LogoutView
 from django.urls import reverse_lazy
+from django.utils import timezone
 
 from .forms import RegisterForm, UserEditForm, UserDeleteForm
+from tasks.models import Task, TaskRating
 
 
 def register_view(request):
@@ -45,6 +50,11 @@ def dashboard_view(request):
 
 @login_required
 def profile_view(request):
+    completed_tasks = Task.objects.filter(assignee=request.user, status='done')
+    ratings = TaskRating.objects.filter(task__in=completed_tasks)
+    last_month_avg = ratings.filter(
+        rated_at__gte=timezone.now() - timedelta(days=30)
+    ).aggregate(Avg('score'))['score__avg'] or 0
     if request.method == 'POST':
         if 'edit_profile' in request.POST:
             form = UserEditForm(request.POST, instance=request.user)
@@ -65,5 +75,10 @@ def profile_view(request):
 
     return render(request, 'profile.html', {
         'form': form,
-        'delete_form': delete_form
+        'delete_form': delete_form,
+        'user': request.user,
+        'total_ratings': ratings.count(),
+        'average_rating': ratings.aggregate(Avg('score'))['score__avg'] or 0,
+        'last_month_avg': round(last_month_avg, 2),
+        'ratings': ratings.order_by('-rated_at')
     })
