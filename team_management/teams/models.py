@@ -32,7 +32,7 @@ class TeamMember(models.Model):
     team = models.ForeignKey(
         Team,
         on_delete=models.CASCADE,
-        related_name='members',  # Используем 'members' вместо 'team_members'
+        related_name='members',
         verbose_name="Команда"
     )
     user = models.ForeignKey(

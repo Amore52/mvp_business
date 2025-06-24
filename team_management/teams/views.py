@@ -24,7 +24,6 @@ def my_teams(request):
 
 @login_required
 def team_create(request):
-
     if request.method == 'POST':
         form = TeamCreateForm(request.POST)
         if form.is_valid():
@@ -80,8 +79,7 @@ def remove_member(request, team_id, user_id):
 @login_required
 def update_member_role(request, team_id, user_id):
     team = get_object_or_404(Team, id=team_id)
-    # Проверяем права через user, а не user_id
-    if team.team_members.filter(user=request.user, role='admin').exists():
+    if team.members.filter(user=request.user, role='admin').exists():
         member = get_object_or_404(TeamMember, team=team, user__id=user_id)
         if request.method == 'POST':
             new_role = request.POST.get('role')
@@ -100,10 +98,9 @@ class TeamUpdateView(UpdateView):
     model = Team
     form_class = TeamCreateForm
     template_name = 'teams/team_edit.html'
-    pk_url_kwarg = 'pk'  # Добавляем явное указание параметра
+    pk_url_kwarg = 'pk'
 
     def get_success_url(self):
-        # Используем pk вместо team_id для согласованности
         return reverse_lazy('teams:team_detail', kwargs={'team_id': self.object.id})
 
 
@@ -111,7 +108,7 @@ class TeamDeleteView(DeleteView):
     model = Team
     template_name = 'teams/team_confirm_delete.html'
     success_url = reverse_lazy('dashboard')
-    pk_url_kwarg = 'pk'  # Явно указываем имя параметра URL
+    pk_url_kwarg = 'pk'
 
     def get_queryset(self):
         return super().get_queryset().filter(created_by=self.request.user)
