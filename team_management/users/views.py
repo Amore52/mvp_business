@@ -26,7 +26,7 @@ def register_view(request):
             return redirect('dashboard')
     else:
         form = RegisterForm()
-    return render(request, 'register.html', {'form': form})
+    return render(request, 'registration/register.html', {'form': form})
 
 
 class CustomLoginView(LoginView):
@@ -36,7 +36,7 @@ class CustomLoginView(LoginView):
     Автоматически перенаправляет авторизованных пользователей.
     Поддерживает опцию "Запомнить меня".
     """
-    template_name = 'login.html'
+    template_name = 'registration/login.html'
     redirect_authenticated_user = True
     success_url = reverse_lazy('dashboard')
 
@@ -50,7 +50,6 @@ class CustomLoginView(LoginView):
 class CustomLogoutView(LogoutView):
     """
     Кастомное представление выхода пользователя из системы.
-
     После выхода перенаправляет на страницу входа.
     """
     next_page = reverse_lazy('login')
