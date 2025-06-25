@@ -1,4 +1,3 @@
-# tests/test_tasks_views.py
 from datetime import timedelta
 
 import pytest
@@ -9,21 +8,8 @@ from django.utils import timezone
 
 from tasks.forms import TaskForm
 from tasks.models import Task, Comment, TaskRating
-from teams.models import Team, TeamMember
 
 User = get_user_model()
-
-
-@pytest.fixture
-def team(db, user):
-    """Фикстура для создания тестовой команды с создателем"""
-    return Team.objects.create(name='Test Team', created_by=user)
-
-
-@pytest.fixture
-def team_member(db, user, team):
-    """Фикстура для добавления пользователя в команду"""
-    return TeamMember.objects.create(user=user, team=team)
 
 
 @pytest.fixture
@@ -39,24 +25,6 @@ def task(db, user, team):
     )
 
 
-@pytest.fixture
-def admin_user(db):
-    """Фикстура для создания администратора"""
-    return User.objects.create_superuser(
-        username='admin',
-        email='admin@example.com',
-        password='adminpass123'
-    )
-
-
-@pytest.fixture
-def admin_client(client, admin_user):
-    """Фикстура для авторизованного администратора"""
-    client.login(username='admin', password='adminpass123')
-    return client
-
-
-# Тесты для my_tasks_view
 def test_my_tasks_view_unauthenticated(client):
     """Неавторизованный пользователь перенаправляется на страницу входа"""
     response = client.get(reverse('my_tasks'))
@@ -118,7 +86,6 @@ def test_create_task_view_post_valid(authenticated_client, user, team):
     assert Task.objects.filter(title='New Task').exists()
 
 
-# Тесты для обработки статуса задачи
 def test_update_task_status(authenticated_client, user, team, task):
     """Пользователь может обновить статус своей задачи"""
     response = authenticated_client.post(
@@ -130,7 +97,6 @@ def test_update_task_status(authenticated_client, user, team, task):
     assert task.status == 'in_progress'
 
 
-# Тесты для комментариев
 def test_add_comment(authenticated_client, user, team, task):
     """Пользователь может добавить комментарий"""
     response = authenticated_client.post(
@@ -152,7 +118,6 @@ def test_add_empty_comment(authenticated_client, user, team, task):
     assert str(messages[0]) == "Комментарий не может быть пустым"
 
 
-# Тесты для оценки задач
 def test_rate_task_admin(admin_client, admin_user, team):
     """Админ может оценить завершенную задачу"""
     task = Task.objects.create(

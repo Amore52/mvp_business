@@ -14,6 +14,10 @@ from tasks.models import Task, TaskRating
 
 
 def register_view(request):
+    """
+    Представление для регистрации нового пользователя.
+    Если метод POST и форма валидна — регистрирует пользователя и перенаправляет на dashboard.
+    """
     if request.method == 'POST':
         form = RegisterForm(request.POST)
         if form.is_valid():
@@ -26,12 +30,17 @@ def register_view(request):
 
 
 class CustomLoginView(LoginView):
+    """
+    Кастомное представление входа пользователя в систему.
+    Использует шаблон 'login.html'.
+    Автоматически перенаправляет авторизованных пользователей.
+    Поддерживает опцию "Запомнить меня".
+    """
     template_name = 'login.html'
     redirect_authenticated_user = True
     success_url = reverse_lazy('dashboard')
 
     def form_valid(self, form):
-        """Дополнительные действия при успешном входе"""
         remember_me = self.request.POST.get('remember_me')
         if not remember_me:
             self.request.session.set_expiry(0)
@@ -39,17 +48,29 @@ class CustomLoginView(LoginView):
 
 
 class CustomLogoutView(LogoutView):
+    """
+    Кастомное представление выхода пользователя из системы.
+
+    После выхода перенаправляет на страницу входа.
+    """
     next_page = reverse_lazy('login')
 
     def dispatch(self, request, *args, **kwargs):
-        """Дополнительные действия перед выходом"""
         return super().dispatch(request, *args, **kwargs)
 
 def dashboard_view(request):
+    """
+    Представление главной страницы (dashboard).
+    """
     return render(request, 'dashboard.html')
 
 @login_required
 def profile_view(request):
+    """
+    Представление профиля пользователя.
+    Отображает форму редактирования профиля, возможность удаления аккаунта,
+    статистику оценок задач за месяц и общую информацию по выполненным задачам.
+    """
     completed_tasks = Task.objects.filter(assignee=request.user, status='done')
     ratings = TaskRating.objects.filter(task__in=completed_tasks)
     last_month_avg = ratings.filter(

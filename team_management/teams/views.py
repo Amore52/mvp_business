@@ -10,6 +10,11 @@ from .forms import TeamCreateForm, TeamMemberForm
 
 @login_required
 def my_teams(request):
+    """
+    Представление для отображения команд текущего пользователя:
+        - Команды, созданные пользователем (created_teams)
+        - Команды, в которых пользователь состоит как участник (member_teams)
+    """
     created_teams = Team.objects.filter(created_by=request.user)
     member_teams = Team.objects.filter(
         members__user=request.user
@@ -24,6 +29,11 @@ def my_teams(request):
 
 @login_required
 def team_create(request):
+    """
+    Представление для создания новой команды.
+    Если метод POST и форма валидна — создаёт команду и назначает создателя администратором.
+    Перенаправляет на страницу деталей команды.
+    """
     if request.method == 'POST':
         form = TeamCreateForm(request.POST)
         if form.is_valid():
@@ -40,6 +50,11 @@ def team_create(request):
 
 @login_required
 def team_detail(request, team_id):
+    """
+    Представление для отображения детальной информации о команде.
+    Только участники команды могут просматривать её.
+    Администратор может добавлять новых участников через форму.
+    """
     team = get_object_or_404(Team, id=team_id)
     members = team.members.select_related('user')
 
@@ -66,6 +81,10 @@ def team_detail(request, team_id):
 
 @login_required
 def remove_member(request, team_id, user_id):
+    """
+    Представление для удаления участника из команды.
+    Доступно только администраторам команды.
+    """
     team = get_object_or_404(Team, id=team_id)
     if team.members.filter(user=request.user, role='admin').exists():
         member = get_object_or_404(TeamMember, team=team, user_id=user_id)
@@ -78,6 +97,10 @@ def remove_member(request, team_id, user_id):
 
 @login_required
 def update_member_role(request, team_id, user_id):
+    """
+    Представление для изменения роли участника команды.
+    Доступно только администраторам команды.
+    """
     team = get_object_or_404(Team, id=team_id)
     if team.members.filter(user=request.user, role='admin').exists():
         member = get_object_or_404(TeamMember, team=team, user__id=user_id)
@@ -95,6 +118,11 @@ def update_member_role(request, team_id, user_id):
 
 
 class TeamUpdateView(UpdateView):
+    """
+    Класс-представление для редактирования информации о команде.
+    Использует форму `TeamCreateForm` и шаблон `teams/team_edit.html`.
+    После успешного редактирования перенаправляет на страницу деталей команды.
+    """
     model = Team
     form_class = TeamCreateForm
     template_name = 'teams/team_edit.html'
@@ -105,6 +133,12 @@ class TeamUpdateView(UpdateView):
 
 
 class TeamDeleteView(DeleteView):
+    """
+     Класс-представление для удаления команды.
+     Отображает страницу подтверждения удаления.
+     Удаление доступно только владельцу команды.
+     После удаления перенаправляет на dashboard.
+     """
     model = Team
     template_name = 'teams/team_confirm_delete.html'
     success_url = reverse_lazy('dashboard')

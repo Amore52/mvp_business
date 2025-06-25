@@ -1,23 +1,21 @@
-from calendar import monthrange
-from datetime import datetime, timedelta
+from datetime import datetime
 
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied
 from django.shortcuts import render, get_object_or_404, redirect
-from django.utils import timezone
+
 from teams.models import TeamMember
 from users.models import User
-
 from .forms import TaskForm, TaskRatingForm
 from .models import Task, Comment
 
 
-
-
-
 @login_required
 def my_tasks_view(request):
+    """
+    Представление для отображения задач, назначенных текущему пользователю.
+    """
     my_tasks = Task.objects.filter(assignee=request.user).select_related('assignee', 'team')
 
     context = {
@@ -28,6 +26,9 @@ def my_tasks_view(request):
 
 @login_required
 def task_detail_view(request, task_id):
+    """
+    Представление для отображения деталей задачи и управления ею.
+    """
     task = get_object_or_404(Task, id=task_id)
     _check_task_access(request, task)
 
@@ -52,14 +53,20 @@ def task_detail_view(request, task_id):
 
 
 def _check_task_access(request, task):
-    """Проверка прав доступа к задаче"""
+    """
+    Проверяет, имеет ли пользователь доступ к задаче.
+    Если нет — вызывает PermissionDenied и выводит сообщение об ошибке.
+    """
     if not (request.user.is_staff or request.user == task.assignee):
         messages.error(request, "У вас нет доступа к этой задаче")
         raise PermissionDenied
 
 
 def _handle_delete_task(request, task):
-    """Обработка удаления задачи"""
+    """
+    Обработчик удаления задачи.
+    Право удаления есть только у администратора.
+    """
     if not request.user.is_staff:
         messages.error(request, "Только администратор может удалять задачи")
         return redirect('task_detail', task_id=task.id)
@@ -69,7 +76,10 @@ def _handle_delete_task(request, task):
 
 
 def _handle_task_edit(request, task):
-    """Редактирование задачи"""
+    """
+    Обработчик редактирования задачи.
+    Право редактирования есть только у администратора.
+    """
     if not request.user.is_staff:
         messages.error(request, "Вы не можете редактировать эту задачу")
         return redirect('task_detail', task_id=task.id)
@@ -103,9 +113,10 @@ def _handle_task_edit(request, task):
     return redirect('task_detail', task_id=task.id)
 
 
-
 def _handle_add_comment(request, task):
-    """Добавление нового комментария"""
+    """
+    Обработчик добавления комментария к задаче.
+    """
     text = request.POST.get('comment_text', '').strip()
     if not text:
         messages.error(request, "Комментарий не может быть пустым")
@@ -121,7 +132,10 @@ def _handle_add_comment(request, task):
 
 
 def _handle_edit_comment(request, task):
-    """Редактирование комментария"""
+    """
+    Обработчик редактирования комментария к задаче.
+    Редактировать может автор комментария или администратор.
+    """
     comment_id = request.POST.get('comment_id')
     new_text = request.POST.get('comment_text', '').strip()
 
@@ -142,8 +156,12 @@ def _handle_edit_comment(request, task):
 
     return redirect('task_detail', task_id=task.id)
 
+
 def _handle_delete_comment(request, task):
-    """Удаление комментария"""
+    """
+     Обработчик удаления комментария к задаче.
+     Удалить может автор комментария или администратор.
+     """
     comment_id = request.POST.get('comment_id')
     try:
         comment = Comment.objects.get(id=comment_id, task=task)
@@ -157,10 +175,11 @@ def _handle_delete_comment(request, task):
     return redirect('task_detail', task_id=task.id)
 
 
-
 @login_required
 def create_task_view(request):
-    """Создание таски"""
+    """
+    Представление для создания новой задачи.
+    """
     if request.method == 'POST':
         form = TaskForm(request.POST)
         if form.is_valid():
@@ -179,6 +198,9 @@ def create_task_view(request):
 
 @login_required
 def rate_task(request, task_id):
+    """
+    Представление для оценки завершённой задачи.
+    """
     task = get_object_or_404(Task, id=task_id)
 
     if not request.user.is_staff:
@@ -207,7 +229,10 @@ def rate_task(request, task_id):
 
 
 def _handle_status_update(request, task):
-    """Обновление статуса задачи"""
+    """
+    Обработчик изменения статуса задачи.
+    Право изменять статус есть у администратора или исполнителя.
+    """
     if not (request.user.is_staff or request.user == task.assignee):
         messages.error(request, "Вы не можете изменять статус этой задачи")
         return redirect('task_detail', task_id=task.id)
@@ -220,7 +245,11 @@ def _handle_status_update(request, task):
 
 
 def _handle_task_rating(request, task):
-    """Обработка оценки задачи"""
+    """
+    Обработчик сохранения оценки задачи.
+    Право оценивать есть только у администратора.
+    Задача должна быть завершена.
+    """
     if not request.user.is_staff:
         messages.error(request, "Только администратор может оценивать задачи")
         return redirect('task_detail', task_id=task.id)
@@ -243,7 +272,9 @@ def _handle_task_rating(request, task):
 
 
 def _prepare_task_context(request, task):
-    """Подготовка контекста для шаблона"""
+    """
+    Подготавливает контекст для отображения страницы задачи.
+    """
     team_members = User.objects.filter(team_memberships__team=task.team) if task.team else User.objects.none()
     existing_rating = task.ratings.filter(rated_by=request.user).first() if hasattr(task, 'ratings') else None
 

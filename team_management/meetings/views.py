@@ -12,6 +12,9 @@ from .models import Meeting
 
 @login_required
 def my_meetings_view(request):
+    """
+    Представление для отображения встреч, в которых пользователь является участником или создателем.
+    """
     my_meetings = Meeting.objects.filter(participants=request.user).prefetch_related('participants', 'team')
 
     context = {
@@ -22,6 +25,11 @@ def my_meetings_view(request):
 
 @login_required
 def create_meeting(request):
+    """
+    Представление для создания новой встречи.
+    Если метод POST и форма валидна — создаёт встречу, добавляет участников.
+    Перенаправляет на dashboard с сообщением об успехе.
+    """
     all_users = User.objects.exclude(id=request.user.id)
     if request.method == 'POST':
         form = MeetingForm(request.POST, user=request.user)
@@ -43,8 +51,13 @@ def create_meeting(request):
 
 @login_required
 def meeting_detail(request, meeting_id):
+    """
+    Представление для отображения деталей встречи и управления ею.
+    Только участники и создатель могут просматривать и управлять встречей.
+    Поддерживает удаление встречи, выход из неё и редактирование.
+    """
     meeting = get_object_or_404(Meeting, id=meeting_id)
-    all_users = User.objects.exclude(id=request.user.id)  # Получаем всех пользователей кроме текущего
+    all_users = User.objects.exclude(id=request.user.id)
     if not (request.user in meeting.participants.all() or request.user == meeting.created_by):
         messages.error(request, "У вас нет доступа к этой встрече")
         return redirect('dashboard')
@@ -62,17 +75,13 @@ def meeting_detail(request, meeting_id):
             messages.success(request, "Вы отменили участие во встрече")
             return redirect('dashboard')
         else:
-            # Обработка формы редактирования
             if request.user == meeting.created_by:
                 meeting.title = request.POST.get('title')
                 meeting.description = request.POST.get('description')
                 meeting.date = request.POST.get('date')
                 meeting.time = request.POST.get('time')
                 meeting.duration = request.POST.get('duration')
-
-                # Получаем список ID выбранных участников
                 participants_ids = request.POST.getlist('participants')
-                # Очищаем текущих участников и добавляем новых
                 meeting.participants.clear()
                 for user_id in participants_ids:
                     user = get_object_or_404(User, id=user_id)
@@ -90,7 +99,10 @@ def meeting_detail(request, meeting_id):
 
 
 def _check_time_conflict(user, date, time, duration, meeting_id=None):
-    """Проверка наложения встреч по времени"""
+    """
+    Проверяет, есть ли у пользователя конфликты по времени с другими встречами.
+    Используется для предотвращения создания встреч в одно и то же время.
+    """
     end_time = (datetime.combine(date, time) + duration).time()
 
     conflicts = Meeting.objects.filter(

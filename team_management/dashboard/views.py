@@ -2,7 +2,6 @@ from calendar import monthrange
 from datetime import datetime, timedelta
 
 from django.contrib.auth.decorators import login_required
-from django.db.models import Q
 from django.shortcuts import render
 from django.utils import timezone
 
@@ -12,13 +11,23 @@ from tasks.models import Task
 
 @login_required
 def dashboard_view(request):
-    # Получаем задачи
+    """
+       Представление для отображения главной страницы (dashboard) пользователя.
+
+       Отображает задачи и встречи на выбранную дату, а также календарь с указанием дней,
+       в которых есть задачи или встречи. Позволяет перемещаться между днями, месяцами.
+       Возвращает:
+           HttpResponse: HTML-страница 'dashboard.html' с контекстом:
+               - tasks: все задачи
+               - upcoming_meetings: все встречи
+               - daily_tasks: задачи на выбранную дату
+               - daily_meetings: встречи на выбранную дату
+               - calendar: данные для отрисовки календаря, включая недели, количество задач/встреч по дням
+       """
     tasks = Task.objects.all()
 
     today = timezone.now().date()
     meetings = Meeting.objects.all()
-
-    # Обработка даты для календаря
     try:
         year = int(request.GET.get('year', today.year))
         month = int(request.GET.get('month', today.month))
@@ -26,12 +35,8 @@ def dashboard_view(request):
         selected_date = datetime(year, month, day).date()
     except:
         selected_date = today
-
-    # Ежедневные задачи и встречи
     daily_tasks = tasks.filter(deadline__date=selected_date)
     daily_meetings = meetings.filter(date=selected_date)
-
-    # Подготовка данных для календаря
     first_day = datetime(year, month, 1).date()
     last_day = datetime(year, month, monthrange(year, month)[1]).date()
 

@@ -6,6 +6,10 @@ from .models import Meeting
 
 
 class MeetingForm(forms.ModelForm):
+    """
+    Форма для создания и редактирования встречи (Meeting).
+    """
+
     def __init__(self, *args, **kwargs):
         self.user = kwargs.pop('user', None)
         super().__init__(*args, **kwargs)
@@ -41,8 +45,6 @@ class MeetingForm(forms.ModelForm):
             if (date == timezone.now().date() and
                     time < timezone.now().time()):
                 raise ValidationError("Нельзя создать встречу в прошедшем времени")
-
-            # Проверка конфликтов для всех участников
             for participant in cleaned_data.get('participants', []):
                 if _check_time_conflict(
                         participant,
