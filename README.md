@@ -88,10 +88,10 @@ pytest --cov
 ```
 
 ## Главная страница
-![Главная страница](screenshots/img.png)
+![Главная страница](team_management/screenshots/img.png)
 
 ## Профиль
-![Профиль](screenshots/img_1.png)
+![Профиль](team_management/screenshots/img_1.png)
 
 ## Задача
-![Задача](screenshots/img_2.png)
+![Задача](team_management/screenshots/img_2.png)
