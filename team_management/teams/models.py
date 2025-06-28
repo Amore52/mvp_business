@@ -49,7 +49,7 @@ class TeamMember(models.Model):
         default='member',
         verbose_name="Роль"
     )
-    joined_at = models.DateTimeField(auto_now_add=True, verbose_name="Дата вступления")
+    joined_at = models.DateTimeField(auto_now_add=True, verbose_name="Дата вступления", null=True)
 
     class Meta:
         constraints = [
