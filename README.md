@@ -57,6 +57,7 @@ git clone https://github.com/Amore52/mvp_business.git
 ```
 ### Шаг 2: Установить зависимости
 ```
+cd team_management
 pip install -r requirements.txt
 ```
 ### Шаг 3: Выполнить миграции
