@@ -32,7 +32,7 @@ def test_my_tasks_view_unauthenticated(client):
     assert '/accounts/login/' in response.url
 
 
-def test_my_tasks_view_authenticated(authenticated_client, user, team, task):
+def test_my_tasks_view_authenticated(authenticated_client, task):
     """Авторизованный пользователь видит свои задачи"""
     response = authenticated_client.get(reverse('my_tasks'))
     assert response.status_code == 200
@@ -40,14 +40,14 @@ def test_my_tasks_view_authenticated(authenticated_client, user, team, task):
 
 
 # Тесты для task_detail_view
-def test_task_detail_view_access(authenticated_client, user, team, task):
+def test_task_detail_view_access(authenticated_client, task):
     """Пользователь может просматривать назначенные ему задачи"""
     response = authenticated_client.get(reverse('task_detail', args=[task.id]))
     assert response.status_code == 200
     assert b'Test Task' in response.content
 
 
-def test_task_detail_view_no_access(authenticated_client, user, team):
+def test_task_detail_view_no_access(authenticated_client,  team):
     """Пользователь не может просматривать чужие задачи"""
     other_user = User.objects.create_user(username='other', password='pass123')
     task = Task.objects.create(
@@ -86,7 +86,7 @@ def test_create_task_view_post_valid(authenticated_client, user, team):
     assert Task.objects.filter(title='New Task').exists()
 
 
-def test_update_task_status(authenticated_client, user, team, task):
+def test_update_task_status(authenticated_client, task):
     """Пользователь может обновить статус своей задачи"""
     response = authenticated_client.post(
         reverse('task_detail', args=[task.id]),
@@ -97,7 +97,7 @@ def test_update_task_status(authenticated_client, user, team, task):
     assert task.status == 'in_progress'
 
 
-def test_add_comment(authenticated_client, user, team, task):
+def test_add_comment(authenticated_client, task):
     """Пользователь может добавить комментарий"""
     response = authenticated_client.post(
         reverse('task_detail', args=[task.id]),
@@ -107,7 +107,7 @@ def test_add_comment(authenticated_client, user, team, task):
     assert Comment.objects.filter(text='Test comment').exists()
 
 
-def test_add_empty_comment(authenticated_client, user, team, task):
+def test_add_empty_comment(authenticated_client, task):
     """Нельзя добавить пустой комментарий"""
     response = authenticated_client.post(
         reverse('task_detail', args=[task.id]),
@@ -118,7 +118,7 @@ def test_add_empty_comment(authenticated_client, user, team, task):
     assert str(messages[0]) == "Комментарий не может быть пустым"
 
 
-def test_rate_task_admin(admin_client, admin_user, team):
+def test_rate_task_admin(admin_client, team):
     """Админ может оценить завершенную задачу"""
     task = Task.objects.create(
         title='Done Task',
@@ -158,7 +158,7 @@ def test_rate_task_non_admin(authenticated_client, user, team):
     assert str(messages[0]) == "У вас нет доступа к этой задаче"
 
 
-def test_rate_unfinished_task(admin_client, admin_user, team):
+def test_rate_unfinished_task(admin_client, team):
     """Нельзя оценить незавершенную задачу"""
     task = Task.objects.create(
         title='In Progress Task',
