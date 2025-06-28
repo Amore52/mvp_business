@@ -11,7 +11,9 @@ class Team(models.Model):
         User,
         on_delete=models.CASCADE,
         related_name='created_teams',
-        verbose_name="Создатель"
+        verbose_name="Создатель",
+        null=True,
+        blank=True,
     )
 
     class Meta:
