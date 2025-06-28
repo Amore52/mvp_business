@@ -62,6 +62,7 @@ pip install -r requirements.txt
 ```
 ### Шаг 3: Выполнить миграции
 ```
+python manage.py makemigrations
 python manage.py migrate
 ```
 ### Шаг 4: Создать суперпользователя
