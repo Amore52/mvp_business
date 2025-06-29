@@ -55,21 +55,35 @@
 ```
 git clone https://github.com/Amore52/mvp_business.git
 ```
-### Шаг 2: Установить зависимости
+
+### Шаг 2: Создайте и активировать виртуальное окружение
+
+```
+python -m venv .venv
+```
+Для Windows:
+```
+.venv\Scripts\activate
+```
+Для Linux:
+```
+source .venv/bin/activate
+```
+### Шаг 3: Установить зависимости
 ```
 cd team_management
 pip install -r requirements.txt
 ```
-### Шаг 3: Выполнить миграции
+### Шаг 4: Выполнить миграции
 ```
 python manage.py makemigrations
 python manage.py migrate
 ```
-### Шаг 4: Создать суперпользователя
+### Шаг 5: Создать суперпользователя
 ```
 python manage.py createsuperuser
 ```
-### Шаг 5: Запустить сервер
+### Шаг 6: Запустить сервер
 ```
 python manage.py runserver
 ```
